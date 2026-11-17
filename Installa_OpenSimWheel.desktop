@@ -1,0 +1,13 @@
+[Desktop Entry]
+Categories=Game;Utility;
+Comment[it_IT]=Avvia l'installazione guidata di OpenSimWheel Linux Bridge
+Comment=Start OpenSimWheel Linux Bridge guided installation
+TryExec=/usr/bin/env
+Exec=bash -c 'cd "$(dirname "$1")/core" && ./installer.sh' _ %k
+Icon=system-software-install
+Name[it_IT]=Installa OpenSimWheel Bridge
+Name=Install OpenSimWheel Bridge
+StartupNotify=true
+Terminal=false
+Type=Application
+Version=1.0

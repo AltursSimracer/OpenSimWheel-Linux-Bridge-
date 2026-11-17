@@ -1,0 +1,23 @@
+================================================================================
+TABELLA PORTE UDP E SHARED MEMORY - OPENSIMWHEEL LINUX BRIDGE v1.3.0
+================================================================================
+
+1. USCITA VERSO VOLANTE / DISPLAY (STANDARD F1 2020/2023)
+   - UDP Steering Wheel / Display / Display DDU UDP : Porta 20777 (configurabile)
+   - Web Live Dash + PitWall Timing        : Porta 8080 (HTTP browser)
+
+2. INGRESSO DAI SIMULATORI SUPPORTATI
+   - Project Motor Racing (PMR)            : UDP Porta 7576 (oppure 5606 / auto)
+   - Le Mans Ultimate (LMU)                : Shared Memory nativa Linux (/dev/shm)
+   - Assetto Corsa Competizione (ACC)      : UDP Broadcasting 9000 + SHM Proton 9001
+   - Assetto Corsa (AC)                    : Shared Memory Proton -> UDP locale 9003
+   - Assetto Corsa EVO (ACE)               : Shared Memory Proton -> UDP locale 9005
+   - RaceRoom Racing Experience (RRRE)     : Shared Memory Proton -> UDP locale 9007
+
+3. STEAM APPID DI RIFERIMENTO (PREFIX PROTON)
+   - Le Mans Ultimate (LMU)                : 2399420
+   - Assetto Corsa Competizione (ACC)      : 805550
+   - Assetto Corsa (AC)                    : 244210
+   - Assetto Corsa EVO (ACE)               : 3058630
+   - RaceRoom Racing Experience (RRRE)     : 211500
+================================================================================
