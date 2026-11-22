@@ -122,10 +122,13 @@ while True:
                 tc_out = 1
         if 0 < _abs_step <= 20:
             abs_out = _abs_step
+        elif _abs_f <= 0.001:
+            abs_out = 0
+        elif _abs_f <= 1.0:
+            # Scala fine AC ABS (es. 0.10->1, 0.12->2, 0.14->3, 0.16->4...)
+            abs_out = int(round(_abs_f * 10)) if _abs_f >= 0.15 else 1
         else:
-            abs_out = int(round(_abs_f * 10)) if 0.0 < _abs_f <= 1.0 else int(round(_abs_f))
-            if _abs_f > 0.001 and abs_out == 0:
-                abs_out = 1
+            abs_out = int(round(_abs_f))
         if not (-10.0 <= air_t <= 60.0): air_t = 22.0
         if not (-10.0 <= road_t <= 80.0): road_t = 26.0
 
