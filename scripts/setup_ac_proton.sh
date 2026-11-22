@@ -90,12 +90,12 @@ while True:
         shm_phys.seek(0)
         p = shm_phys.read(600)
         pkt_id, gas, brake, fuel, gear, rpms, steer, speed_kmh = struct.unpack_from("<ifffiiff", p, 0)
-        tc_val, = struct.unpack_from("<f", p, 96)
-        p_fl, p_fr, p_rl, p_rr = struct.unpack_from("<ffff", p, 100)
-        abs_val, = struct.unpack_from("<f", p, 136)
+        p_fl, p_fr, p_rl, p_rr = struct.unpack_from("<ffff", p, 88)
+        w_fl, w_fr, w_rl, w_rr = struct.unpack_from("<ffff", p, 120)
+        t_fl, t_fr, t_rl, t_rr = struct.unpack_from("<ffff", p, 152)
+        tc_val, = struct.unpack_from("<f", p, 204)
+        abs_val, = struct.unpack_from("<f", p, 252)
         kers_c, kers_i = struct.unpack_from("<ff", p, 256)
-        w_fl, w_fr, w_rl, w_rr = struct.unpack_from("<ffff", p, 148)
-        t_fl, t_fr, t_rl, t_rr = struct.unpack_from("<ffff", p, 164)
         air_t, road_t = struct.unpack_from("<ff", p, 180)
         bb_val, = struct.unpack_from("<f", p, 564)
         ti_fl, ti_fr, ti_rl, ti_rr = struct.unpack_from("<ffff", p, 368)
@@ -106,11 +106,13 @@ while True:
         if not (-10.0 <= road_t <= 80.0): road_t = 26.0
 
         shm_gfx.seek(0)
-        g = shm_gfx.read(1340)
+        g = shm_gfx.read(1400)
         completed_laps, position, i_cur_time, i_last_time, i_best_time = struct.unpack_from("<iiiii", g, 132)
         cur_sector, last_sector_ms = struct.unpack_from("<ii", g, 164)
         norm_spline, = struct.unpack_from("<f", g, 248)
         flag_id, = struct.unpack_from("<i", g, 1328)
+        tc_lvl, = struct.unpack_from("<i", g, 1372)
+        abs_lvl, = struct.unpack_from("<i", g, 1384)
 
         shm_stat.seek(0)
         s = shm_stat.read(256)
@@ -134,7 +136,7 @@ while True:
             _clean_f(air_t, 22.0), _clean_f(road_t, 26.0),
             _clean_f(p_fl), _clean_f(p_fr), _clean_f(p_rl), _clean_f(p_rr),
             _clean_f(w_fl, 100.0), _clean_f(w_fr, 100.0), _clean_f(w_rl, 100.0), _clean_f(w_rr, 100.0),
-            int(round(_clean_f(tc_val))), int(round(_clean_f(abs_val))),
+            int(tc_lvl), int(abs_lvl),
             _clean_f(bb_val), int(flag_id),
             _clean_f(ti_fl, 25.0), _clean_f(tm_fl, 25.0), _clean_f(to_fl, 25.0),
             _clean_f(ti_fr, 25.0), _clean_f(tm_fr, 25.0), _clean_f(to_fr, 25.0),

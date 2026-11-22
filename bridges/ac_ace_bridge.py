@@ -256,7 +256,7 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
         struct.pack_into("<bHBBH", p6, 15, int(gear_display), rpm, int(drs_active), led_pct, led_bits)
         struct.pack_into("<BBBB", p6, 44, temp_rl, temp_rr, temp_fl, temp_fr)
         struct.pack_into("<BBBB", p6, 48, temp_rl, temp_rr, temp_fl, temp_fr)
-        struct.pack_into("<HHHH", p6, 20, 320, 320, 340, 340); struct.pack_into("<H", p6, 36, 92); struct.pack_into("<H", p6, 52, 92)
+        struct.pack_into("<HHHH", p6, 20, 320, 320, 340, 340); struct.pack_into("<ffff", p6, 28, p_rl if p_rl > 1 else 26.5, p_rr if p_rr > 1 else 26.5, p_fl if p_fl > 1 else 26.5, p_fr if p_fr > 1 else 26.5); struct.pack_into("<H", p6, 36, 92); struct.pack_into("<H", p6, 52, 92)
 
         h7 = struct.pack(hdr, 2020, 1, 0, 1, 7, 123456789, float(tempo), _fid, 0, 0)
         p7 = bytearray(1320)
@@ -290,7 +290,10 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
             _ers_chg = 1
         globals()["_OSW_PREV_ERS"] = _ers_pct
         _ers_joules = max(0.0, min(4000000.0, (_ers_pct / 100.0) * 4000000.0))
-        struct.pack_into("<fB", p7, 43, _ers_joules, _ers_mod)
+        _ers_mod_v = 3 if _ers_act else 1
+        _ers_harv = (_ers_pct / 100.0) * 1500000.0 if _ers_chg else 250000.0
+        _ers_depl = ((100.0 - _ers_pct) / 100.0) * 2000000.0 if _ers_act else 150000.0
+        struct.pack_into("<fBfff", p7, 43, _ers_joules, _ers_mod_v, _ers_harv, 0.0, _ers_depl)
         if "DASH_STATE" in locals() or "DASH_STATE" in globals():
             DASH_STATE["ers"] = round(_ers_pct, 1)
             DASH_STATE["ers_active"] = _ers_act
