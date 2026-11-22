@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>OpenSimWheel Live Dash</title>
+<style>
+  body { background:#0b0d10; color:#f0f3f6; font-family:system-ui,-apple-system,sans-serif; margin:0; padding:14px; display:flex; flex-direction:column; align-items:center; }
+  .header { width:100%; max-width:760px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222831; padding-bottom:10px; margin-bottom:14px; }
+  .title { font-size:1.15rem; font-weight:700; letter-spacing:1px; }
+  .badge { padding:4px 12px; border-radius:20px; font-size:0.8rem; font-weight:700; background:#3a1c1c; color:#ff5252; }
+  .badge.on { background:#163824; color:#2ecc71; }
+  .leds { width:100%; max-width:760px; display:grid; grid-template-columns:repeat(15,1fr); gap:6px; margin-bottom:16px; }
+  .led { height:15px; border-radius:4px; background:#1c2128; transition:background 0.05s; }
+  .grid { width:100%; max-width:760px; display:grid; grid-template-columns:1fr 1.2fr 1fr; gap:12px; align-items:center; text-align:center; }
+  .card { background:#13171d; border:1px solid #222831; border-radius:14px; padding:14px 10px; }
+  .gear { font-size:5.2rem; font-weight:900; color:#f1c40f; line-height:1; }
+    .elec-item.ers-active { background: rgba(34,197,94,0.22); border: 1px solid #22c55e; color: #22c55e; box-shadow: 0 0 12px rgba(34,197,94,0.45); }
+  .elec-item.ers-charging { background: rgba(56,189,248,0.18); border: 1px solid #38bdf8; color: #38bdf8; }
+  .card.flag-yellow { border:2px solid #eab308; box-shadow:0 0 18px rgba(234,179,8,0.45); }
+  .card.flag-blue { border:2px solid #3b82f6; box-shadow:0 0 18px rgba(59,130,246,0.45); }
+  .card.flag-white { border:2px solid #f8fafc; box-shadow:0 0 18px rgba(248,250,252,0.35); }
+  .card.flag-checkered { border:2px solid #22c55e; box-shadow:0 0 18px rgba(34,197,94,0.45); }
+  .elec-strip { width:100%; max-width:760px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:10px; text-align:center; }
+  .elec-item { background:#11161e; border:1px solid #222936; border-radius:10px; padding:6px 8px; font-size:0.85rem; font-weight:700; color:#8b949e; }
+  .elec-item span { color:#f0f3f6; font-variant-numeric:tabular-nums; margin-left:4px; }
+  .val { font-size:2.8rem; font-weight:800; line-height:1.1; font-variant-numeric:tabular-nums; }
+  .lbl { font-size:0.75rem; color:#8b949e; text-transform:uppercase; letter-spacing:1px; margin-top:5px; }
+  .midgrid { width:100%; max-width:760px; display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+  .panel { background:#13171d; border:1px solid #222831; border-radius:12px; padding:12px; }
+  .panel-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .panel-title { font-size:0.75rem; color:#8b949e; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center; }
+  .panel-header .panel-title { margin-bottom:0; }
+  .mode-btn { background:#1c2128; color:#58a6ff; border:1px solid #30363d; border-radius:5px; padding:4px 10px; font-size:0.72rem; font-weight:700; cursor:pointer; touch-action:manipulation; }
+  .mode-btn:hover { background:#262c36; }
+  .tyres { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .tyre { background:#1a2029; border-radius:8px; padding:6px 10px; font-weight:700; border-left:4px solid #30363d; display:flex; justify-content:space-between; align-items:center; min-height:38px; transition:border-color 0.2s; }
+  .tyre-info { display:flex; flex-direction:column; align-items:flex-start; }
+  .tyre-lbl { font-size:0.82rem; color:#8b949e; line-height:1.1; }
+  .tyre-meta { font-size:0.7rem; color:#7c8599; font-variant-numeric:tabular-nums; margin-top:2px; }
+  .tyre-single { font-size:1.15rem; font-variant-numeric:tabular-nums; }
+  .tyre-imo { display:none; gap:5px; align-items:flex-end; }
+  .imo-col { display:flex; flex-direction:column; align-items:center; }
+  .imo-bar { width:11px; height:16px; border-radius:2px; background:#262c36; transition:background 0.2s; }
+  .imo-txt { font-size:0.7rem; margin-top:2px; font-variant-numeric:tabular-nums; color:#8b949e; }
+  .imo-mode .tyre-single { display:none; }
+  .imo-mode .tyre-imo { display:flex; }
+  .timing-row { display:flex; justify-content:space-between; padding:6px 4px; border-bottom:1px solid #1e242d; font-size:1rem; font-weight:700; font-variant-numeric:tabular-nums; }
+  .timing-row:last-child { border-bottom:none; }
+  .subgrid { width:100%; max-width:760px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:12px; text-align:center; }
+  .subcard { background:#13171d; border:1px solid #222831; border-radius:10px; padding:10px 6px; }
+  .subval { font-size:1.1rem; font-weight:700; color:#58a6ff; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<a href="/timing" style="position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:9999;background:#232836;color:#fff;border:1px solid #384054;padding:6px 12px;border-radius:4px;text-decoration:none;font-family:sans-serif;font-size:12px;font-weight:bold;">PITWALL TIMING &rarr;</a>
+
+  <div class="header">
+    <div class="title">🏁 OpenSimWheel Live Dash</div>
+    <div id="status" class="badge">IN ATTESA DEL SIMULATORE...</div>
+  </div>
+  <div class="leds" id="ledbar"></div>
+  <div class="grid">
+    <div class="card"><div class="val" id="speed">0</div><div class="lbl">km/h</div></div>
+    <div class="card" id="gearCard"><div class="gear" id="gear">N</div><div class="lbl">GEAR</div></div>
+    <div class="card"><div class="val" id="rpm">0</div><div class="lbl">RPM</div></div>
+  </div>
+  <div class="midgrid">
+    <div class="panel">
+      <div class="panel-title">⏱️ Tempi sul Giro & Settori</div>
+      <div class="timing-row"><span>Giro Attuale</span><span id="cur_lap" style="color:#2ecc71;">0:00.000</span></div>
+      <div class="timing-row"><span>Ultimo Giro</span><span id="last_lap">--:--.---</span></div>
+      <div class="timing-row"><span>Settori (S1 / S2 / S3)</span><span id="sectors">--.- / --.- / --.-</span></div>
+    </div>
+    <div class="panel" id="tyres_panel">
+      <div class="panel-header">
+        <div class="panel-title">🛞 Gomme (°C)</div>
+        <button class="mode-btn" id="btn_tyre_mode" onclick="toggleTyreMode()">MEDIA</button>
+      </div>
+      <div class="tyres">
+        <div class="tyre" id="t_fl"><div class="tyre-info"><span class="tyre-lbl">FL</span><span class="tyre-meta">--.- psi • ---%</span></div><span class="tyre-single">--°</span><div class="tyre-imo"><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div></div></div>
+        <div class="tyre" id="t_fr"><div class="tyre-info"><span class="tyre-lbl">FR</span><span class="tyre-meta">--.- psi • ---%</span></div><span class="tyre-single">--°</span><div class="tyre-imo"><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div></div></div>
+        <div class="tyre" id="t_rl"><div class="tyre-info"><span class="tyre-lbl">RL</span><span class="tyre-meta">--.- psi • ---%</span></div><span class="tyre-single">--°</span><div class="tyre-imo"><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div></div></div>
+        <div class="tyre" id="t_rr"><div class="tyre-info"><span class="tyre-lbl">RR</span><span class="tyre-meta">--.- psi • ---%</span></div><span class="tyre-single">--°</span><div class="tyre-imo"><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div><div class="imo-col"><div class="imo-bar"></div><span class="imo-txt">--</span></div></div></div>
+      </div>
+    </div>
+  </div>
+  <div class="elec-strip">
+    <div class="elec-item">TC <span id="tc">--</span></div>
+    <div class="elec-item">ABS <span id="abs">--</span></div>
+    <div class="elec-item">BIAS <span id="bb">--.-%</span></div>
+    <div class="elec-item" id="drsBox">DRS <span id="drsTxt">OFF</span></div>
+    <div class="elec-item" id="ersBox">ERS <span id="ersTxt">--%</span></div>
+    <div class="elec-item">FLAG <span id="flagTxt">--</span></div>
+  </div>
+  <div class="subgrid">
+    <div class="subcard"><div class="subval" id="fuel">0.0 L</div><div class="lbl">Carburante</div></div>
+    <div class="subcard"><div class="subval" id="weather">--° / --°</div><div class="lbl">Aria / Pista</div></div>
+    <div class="subcard"><div class="subval" id="pkts">0</div><div class="lbl">Pacchetti</div></div>
+    <div class="subcard"><div class="subval" id="hz">0.0 Hz</div><div class="lbl">Frequenza</div></div>
+  </div>
+<script>
+  const bar = document.getElementById("ledbar");
+  for(let i=0;i<15;i++){ const d=document.createElement("div"); d.className="led"; bar.appendChild(d); }
+  const leds = document.querySelectorAll(".led");
+
+  let imoActive = localStorage.getItem("osw_tyre_view") === "imo";
+  function applyTyreView(){
+    const p = document.getElementById("tyres_panel");
+    const b = document.getElementById("btn_tyre_mode");
+    if(imoActive){ p.classList.add("imo-mode"); b.textContent = "IMO"; }
+    else { p.classList.remove("imo-mode"); b.textContent = "MEDIA"; }
+  }
+  function toggleTyreMode(){
+    imoActive = !imoActive;
+    localStorage.setItem("osw_tyre_view", imoActive ? "imo" : "media");
+    applyTyreView();
+  }
+  applyTyreView();
+
+  function fmtTime(sec){
+    if(!sec || sec <= 0) return "--:--.---";
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toFixed(3).padStart(6, "0");
+    return m + ":" + s;
+  }
+
+  function getTempColor(temp){
+    if(temp <= 55) return "hsl(210, 85%, 55%)";
+    if(temp < 75) {
+      const t = (temp - 55) / 20;
+      const hue = 210 - t * 75;
+      return `hsl(${hue.toFixed(0)}, 85%, 50%)`;
+    }
+    if(temp <= 92) return "hsl(135, 80%, 48%)";
+    if(temp < 108) {
+      const t = (temp - 92) / 16;
+      const hue = 135 - t * 135;
+      return `hsl(${hue.toFixed(0)}, 90%, 52%)`;
+    }
+    return "hsl(0, 90%, 52%)";
+  }
+
+  function styleTyre(elId, temp, imoArr, pressPsi, wearPct, connected, isLeft){
+    const el = document.getElementById(elId);
+    const singleEl = el.querySelector(".tyre-single");
+    const metaEl = el.querySelector(".tyre-meta");
+    const valid = connected && temp > 0 && temp < 300;
+
+    if(valid){
+      const color = getTempColor(temp);
+      el.style.borderLeftColor = color;
+      singleEl.textContent = Math.round(temp) + "°";
+      singleEl.style.color = color;
+      const pTxt = (pressPsi && pressPsi > 1.0) ? pressPsi.toFixed(1) + " psi" : "--.- psi";
+      const wTxt = (typeof wearPct === "number" && wearPct >= 0) ? Math.round(wearPct) + "%" : "---%";
+      metaEl.textContent = pTxt + " • " + wTxt;
+    } else {
+      el.style.borderLeftColor = "#30363d";
+      singleEl.textContent = "--°";
+      singleEl.style.color = "#f0f3f6";
+      metaEl.textContent = "--.- psi • ---%";
+    }
+
+    const cols = el.querySelectorAll(".imo-col");
+    let vals = (Array.isArray(imoArr) && imoArr.length === 3) ? [...imoArr] : [temp, temp, temp];
+    if(isLeft && vals.length === 3){
+      vals = [vals[2], vals[1], vals[0]];
+    }
+
+    cols.forEach((col, i) => {
+      const v = vals[i];
+      const vOk = connected && v > 0 && v < 300;
+      const barEl = col.querySelector(".imo-bar");
+      const txtEl = col.querySelector(".imo-txt");
+      if(vOk){
+        const c = getTempColor(v);
+        barEl.style.background = c;
+        txtEl.textContent = Math.round(v);
+        txtEl.style.color = c;
+      } else {
+        barEl.style.background = "#262c36";
+        txtEl.textContent = "--";
+        txtEl.style.color = "#8b949e";
+      }
+    });
+  }
+
+  async function update(){
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 250);
+
+    try{
+      const r = await fetch("/api/telemetry", { signal: controller.signal, cache: "no-store" });
+      clearTimeout(timeoutId);
+      const d = await r.json();
+
+      const st = document.getElementById("status");
+      if(d.connected){ st.textContent="CONNESSO"; st.className="badge on"; }
+      else { st.textContent="IN ATTESA DEL SIMULATORE..."; st.className="badge"; }
+
+      document.getElementById("gear").textContent = d.gear;
+      document.getElementById("speed").textContent = d.speed;
+      document.getElementById("rpm").textContent = d.rpm;
+      document.getElementById("tc").textContent = (d.connected && typeof d.tc === "number") ? d.tc : "--";
+      document.getElementById("abs").textContent = (d.connected && typeof d.abs === "number") ? d.abs : "--";
+      document.getElementById("bb").textContent = (d.connected && d.brake_bias > 1.0) ? d.brake_bias.toFixed(1) + "%" : "--.-%";
+
+      const gCard = document.getElementById("gearCard");
+                  const drsBox = document.getElementById("drsBox");
+      const drsTxt = document.getElementById("drsTxt");
+      if(drsBox && drsTxt){
+        drsBox.classList.remove("ers-active");
+        if(d.connected && (d.drs === 1 || d.drs === true)){
+          drsBox.classList.add("ers-active");
+          drsTxt.textContent = "ON";
+        } else {
+          drsTxt.textContent = "OFF";
+        }
+      }
+      const ersBox = document.getElementById("ersBox");
+      const ersTxt = document.getElementById("ersTxt");
+      if(ersBox && ersTxt){
+        ersBox.classList.remove("ers-active", "ers-charging");
+        if(d.connected && typeof d.ers === "number" && d.ers >= 0){
+          ersTxt.textContent = Math.round(d.ers) + "%";
+          if(d.ers_active === 1 || d.ers_active === true) ersBox.classList.add("ers-active");
+          else if(d.ers_charging === 1 || d.ers_charging === true) ersBox.classList.add("ers-charging");
+        } else {
+          ersTxt.textContent = "--%";
+        }
+      }
+      const fTxt = document.getElementById("flagTxt");
+      gCard.classList.remove("flag-yellow", "flag-blue", "flag-white", "flag-checkered");
+      if(d.connected && d.flag && d.flag !== "none"){
+        gCard.classList.add("flag-" + d.flag);
+        fTxt.textContent = d.flag.toUpperCase();
+      } else {
+        fTxt.textContent = d.connected ? "GREEN" : "--";
+      }
+
+      const fLaps = (d.fuel_laps && d.fuel_laps > 0) ? (" (" + d.fuel_laps.toFixed(1) + "g)") : "";
+      document.getElementById("fuel").textContent = d.fuel.toFixed(1) + " L" + fLaps;
+      document.getElementById("weather").textContent = Math.round(d.air_temp) + "° / " + Math.round(d.track_temp) + "°" + (d.engine_temp > 0 ? " | ENG " + Math.round(d.engine_temp) + "°" : "");
+      document.getElementById("pkts").textContent = d.packets;
+      document.getElementById("hz").textContent = d.hz.toFixed(1) + " Hz";
+      document.getElementById("cur_lap").textContent = fmtTime(d.cur_lap);
+      document.getElementById("last_lap").textContent = fmtTime(d.last_lap);
+
+      const s1Txt = (d.s1 && d.s1 > 0) ? d.s1.toFixed(2) : "--.-";
+      const s2Txt = (d.s2 && d.s2 > 0) ? d.s2.toFixed(2) : "--.-";
+      const s3Txt = (d.s3 && d.s3 > 0) ? d.s3.toFixed(2) : "--.-";
+      document.getElementById("sectors").textContent = s1Txt + " / " + s2Txt + " / " + s3Txt;
+
+      const btnMode = document.getElementById("btn_tyre_mode");
+      const tyresPanel = document.getElementById("tyres_panel");
+      if(btnMode && tyresPanel){
+        if(d.has_imo === false){
+          btnMode.style.display = "none";
+          tyresPanel.classList.remove("imo-mode");
+        } else {
+          btnMode.style.display = "inline-block";
+          if(imoActive) tyresPanel.classList.add("imo-mode");
+          else tyresPanel.classList.remove("imo-mode");
+        }
+      }
+
+      const tp = Array.isArray(d.tyre_press) ? d.tyre_press : [0, 0, 0, 0];
+      const tw = Array.isArray(d.tyre_wear) ? d.tyre_wear : [100, 100, 100, 100];
+      styleTyre("t_fl", d.tyre_fl, d.tyre_fl_imo, tp[0], tw[0], d.connected, true);
+      styleTyre("t_fr", d.tyre_fr, d.tyre_fr_imo, tp[1], tw[1], d.connected, false);
+      styleTyre("t_rl", d.tyre_rl, d.tyre_rl_imo, tp[2], tw[2], d.connected, true);
+      styleTyre("t_rr", d.tyre_rr, d.tyre_rr_imo, tp[3], tw[3], d.connected, false);
+
+      const ratio = d.max_rpm > 0 ? Math.min(1, Math.max(0, d.rpm / d.max_rpm)) : 0;
+      const lit = Math.round(ratio * 15);
+      leds.forEach((el, idx) => {
+        if(idx < lit){ el.style.background = idx < 5 ? "#2ecc71" : (idx < 10 ? "#3498db" : "#e74c3c"); }
+        else { el.style.background = "#1c2128"; }
+      });
+    } catch(e) {
+      clearTimeout(timeoutId);
+    } finally {
+      setTimeout(update, 50);
+    }
+  }
+  update();
+</script>
+</body>
+</html>
+

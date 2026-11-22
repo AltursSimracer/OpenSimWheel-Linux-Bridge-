@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OpenSimWheel - PitWall Timing</title>
+<style>
+  :root {
+    --bg: #0a0b0e;
+    --panel: #14171f;
+    --border: #262b38;
+    --text: #f0f3f8;
+    --muted: #7c8599;
+    --accent: #e10600;
+    --green: #00e676;
+    --purple: #d500f9;
+    --yellow: #ffd600;
+    --cyan: #00e5ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 10px;
+    overflow: hidden;
+  }
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 5px solid var(--accent);
+    padding: 6px 14px;
+    border-radius: 6px;
+  }
+  .title { font-weight: 800; letter-spacing: 1.5px; font-size: 0.95rem; text-transform: uppercase; }
+  .nav-btn {
+    background: #232836;
+    color: #fff;
+    border: 1px solid #384054;
+    padding: 6px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 700;
+    touch-action: manipulation;
+  }
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .big-num {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 3.6rem;
+    font-weight: 900;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  .pos-color { color: var(--yellow); }
+  .lap-color { color: var(--text); }
+  .current-box {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    margin-top: 8px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .time-hero {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 4.8rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #ffffff;
+    font-variant-numeric: tabular-nums;
+  }
+  .sectors-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .sector-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--cyan);
+    border-radius: 6px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .sector-time {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--cyan);
+    font-variant-numeric: tabular-nums;
+  }
+  .sub-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .time-sub {
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 2.3rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+  .last-color { color: var(--green); }
+  .best-color { color: var(--purple); }
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 6px;
+    padding: 0 4px;
+  }
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff1744;
+    margin-right: 6px;
+  }
+  .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  @media (max-width: 600px) {
+    .big-num { font-size: 2.8rem; }
+    .time-hero { font-size: 3.1rem; }
+    .sector-time { font-size: 1.4rem; }
+    .time-sub { font-size: 1.65rem; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="title">PITWALL TELEMETRY // TIMING</div>
+    <a href="/" class="nav-btn">RPM / GEAR DASH &rarr;</a>
+  </div>
+
+  <div class="main-grid">
+    <div class="box">
+      <div class="label">POSITION</div>
+      <div class="big-num pos-color" id="pos">P1</div>
+    </div>
+    <div class="box">
+      <div class="label">LAP</div>
+      <div class="big-num lap-color" id="lap">1</div>
+    </div>
+  </div>
+
+  <div class="current-box">
+    <div class="label">CURRENT LAP TIME</div>
+    <div class="time-hero" id="curr">0:00.000</div>
+  </div>
+
+  <div class="sectors-grid">
+    <div class="sector-box">
+      <div class="label">SECTOR 1</div>
+      <div class="sector-time" id="s1">--.---</div>
+    </div>
+    <div class="sector-box">
+      <div class="label">SECTOR 2</div>
+      <div class="sector-time" id="s2">--.---</div>
+    </div>
+    <div class="sector-box">
+      <div class="label">SECTOR 3</div>
+      <div class="sector-time" id="s3">--.---</div>
+    </div>
+  </div>
+
+  <div class="sub-grid">
+    <div class="box">
+      <div class="label">LAST LAP</div>
+      <div class="time-sub last-color" id="last">--:--.---</div>
+    </div>
+    <div class="box">
+      <div class="label">BEST LAP</div>
+      <div class="time-sub best-color" id="best">--:--.---</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div><span class="dot" id="dot"></span><span id="status">WAITING UDP...</span></div>
+    <div>OpenSimWheel Linux Bridge</div>
+  </div>
+<script>
+function formatTime(sec) {
+  if (!sec || sec <= 0.01) return "--:--.---";
+  const totalMs = Math.round(sec * 1000);
+  const mins = Math.floor(totalMs / 60000);
+  const secs = Math.floor((totalMs % 60000) / 1000);
+  const ms = totalMs % 1000;
+  return mins + ":" + String(secs).padStart(2, '0') + "." + String(ms).padStart(3, '0');
+}
+
+function formatSector(sec) {
+  if (!sec || sec <= 0.01) return "--.---";
+  return sec.toFixed(3);
+}
+
+async function poll() {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 250);
+
+  try {
+    const res = await fetch('/api/telemetry', { signal: controller.signal, cache: 'no-store' });
+    clearTimeout(timeoutId);
+    const d = await res.json();
+
+    document.getElementById('pos').textContent = "P" + (d.pos || 1);
+    document.getElementById('lap').textContent = d.lap || 1;
+    document.getElementById('curr').textContent = (d.cur_lap && d.cur_lap > 0.01) ? formatTime(d.cur_lap) : "0:00.000";
+    document.getElementById('last').textContent = formatTime(d.last_lap);
+    document.getElementById('best').textContent = formatTime(d.best_lap);
+
+    document.getElementById('s1').textContent = formatSector(d.s1);
+    document.getElementById('s2').textContent = formatSector(d.s2);
+    const s3 = (d.s3 && d.s3 > 0.01) ? d.s3 :
+               ((d.last_lap > 0 && d.s1 > 0 && d.s2 > 0 && d.last_lap > (d.s1 + d.s2))
+               ? (d.last_lap - d.s1 - d.s2)
+               : 0);
+    document.getElementById('s3').textContent = formatSector(s3);
+
+    const dot = document.getElementById('dot');
+    const st = document.getElementById('status');
+    if (d.connected) {
+      dot.classList.add('live');
+      st.textContent = "LIVE TELEMETRY";
+    } else {
+      dot.classList.remove('live');
+      st.textContent = "PAUSED / WAITING UDP";
+    }
+  } catch (e) {
+    clearTimeout(timeoutId);
+  } finally {
+    setTimeout(poll, 50);
+  }
+}
+poll();
+</script>
+</body>
+</html>
