@@ -252,11 +252,22 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
 
         h6 = struct.pack(hdr, 2020, 1, 0, 1, 6, 123456789, float(tempo), _fid, 0, 0)
         p6 = bytearray(1323)
-        struct.pack_into("<HfffB", p6, 0, speed_kmh, 1.0, 0.0, 0.0, 0)
+        _gas_v = max(0.0, min(1.0, float(locals().get("gas", 1.0 if speed_kmh > 5 else 0.0))))
+        _brk_v = max(0.0, min(1.0, float(locals().get("brake", 0.0))))
+        _str_v = max(-1.0, min(1.0, float(locals().get("steer", 0.0))))
+        struct.pack_into("<HfffB", p6, 0, speed_kmh, _gas_v, _str_v, _brk_v, 0)
         struct.pack_into("<bHBBH", p6, 15, int(gear_display), rpm, int(drs_active), led_pct, led_bits)
-        struct.pack_into("<BBBB", p6, 44, temp_rl, temp_rr, temp_fl, temp_fr)
-        struct.pack_into("<BBBB", p6, 48, temp_rl, temp_rr, temp_fl, temp_fr)
-        struct.pack_into("<HHHH", p6, 20, 320, 320, 340, 340); struct.pack_into("<H", p6, 36, 92); struct.pack_into("<H", p6, 52, 92)
+        _brk_t = max(85, min(650, int(95 + (speed_kmh * 0.4) + (locals().get("brake", 0.0) * 280))))
+        _prl = float(p_rl) if p_rl > 1.0 else 26.5
+        _prr = float(p_rr) if p_rr > 1.0 else 26.5
+        _pfl = float(p_fl) if p_fl > 1.0 else 26.5
+        _pfr = float(p_fr) if p_fr > 1.0 else 26.5
+        struct.pack_into("<HHHH", p6, 20, _brk_t, _brk_t, _brk_t + 15, _brk_t + 15)
+        struct.pack_into("<BBBB", p6, 28, temp_rl, temp_rr, temp_fl, temp_fr)
+        struct.pack_into("<BBBB", p6, 32, temp_rl, temp_rr, temp_fl, temp_fr)
+        struct.pack_into("<H", p6, 36, 92)
+        struct.pack_into("<ffff", p6, 38, _prl, _prr, _pfl, _pfr)
+        struct.pack_into("<BBBB", p6, 54, 0, 0, 0, 0)
 
         h7 = struct.pack(hdr, 2020, 1, 0, 1, 7, 123456789, float(tempo), _fid, 0, 0)
         p7 = bytearray(1320)
@@ -266,9 +277,11 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
         struct.pack_into("<BBBBB", p7, 0, tc_f1, abs_f1, 1, bb_f1, 0)
         struct.pack_into("<fff", p7, 5, fuel_in_tank, fuel_cap, fuel_laps)
         soglia_cambiata = int(max_rpm * 0.93) if max_rpm > 2000 else 7500
-        struct.pack_into("<HHB", p7, 17, soglia_cambiata, idle_rpm, 8)
-        struct.pack_into("<BBBB", p7, 25, max(0, 100 - life_rl), max(0, 100 - life_rr), max(0, 100 - life_fl), max(0, 100 - life_fr))
-        struct.pack_into("<BB", p7, 29, 16, 16)
+        struct.pack_into("<HHBBH", p7, 17, soglia_cambiata, idle_rpm, 8, 1, 0)
+        _d_rl, _d_rr, _d_fl, _d_fr = max(0, 100 - life_rl), max(0, 100 - life_rr), max(0, 100 - life_fl), max(0, 100 - life_fr)
+        struct.pack_into("<BBBB", p7, 25, _d_rl, _d_rr, _d_fl, _d_fr)
+        struct.pack_into("<BBBB", p7, 33, _d_rl, _d_rr, _d_fl, _d_fr)
+        struct.pack_into("<BBB", p7, 29, 16, 16, max(1, int(locals().get("lap_num", 1))))
         _fia_map = {"green": 1, "blue": 2, "yellow": 3, "white": 4}
         if in_fuorigiri:
             fia_flag = 2 if int(tempo * 20) % 2 == 0 else 4
@@ -308,6 +321,13 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
         out_sock.sendto(h0 + p0, (ip_display, porta_display))
         out_sock.sendto(h1 + p1, (ip_display, porta_display))
         out_sock.sendto(h2 + p2, (ip_display, porta_display))
+        if tempo - globals().get("_OSW_P4_TS", 0.0) >= 0.5:
+            globals()["_OSW_P4_TS"] = tempo
+            h4 = struct.pack(hdr, 2020, 1, 0, 1, 4, 123456789, float(tempo), _fid, 0, 0)
+            p4 = bytearray(1189)
+            p4[0] = 1
+            struct.pack_into("<BBBBBBB48sB", p4, 1, 0, 255, 0, 1, 148, 0, b"OPENSIMWHEEL\x00", 1)
+            out_sock.sendto(h4 + p4, (ip_display, porta_display))
         out_sock.sendto(h6 + p6, (ip_display, porta_display))
         out_sock.sendto(h7 + p7, (ip_display, porta_display))
     except Exception as e:
