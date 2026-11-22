@@ -129,7 +129,7 @@ while True:
             tc_out = 0
         elif _tc_f <= 0.25:
             # Mappatura progressiva 1..9 per i livelli TC Ferrari/GT in AC (0.02 -> 1 .. 0.18 -> 9)
-            tc_out = max(1, min(12, int(round((_tc_f - 0.01) / 0.018)) + 1))
+            tc_out = max(1, min(12, int(round((_tc_f - 0.01) * 100))))
         else:
             tc_out = int(round(_tc_f))
         if 0 < _abs_step <= 20:
