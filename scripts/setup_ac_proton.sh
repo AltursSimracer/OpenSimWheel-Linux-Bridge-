@@ -92,7 +92,7 @@ while True:
         pkt_id, gas, brake, fuel, gear, rpms, steer, speed_kmh = struct.unpack_from("<ifffiiff", p, 0)
         tc_val, = struct.unpack_from("<f", p, 96)
         p_fl, p_fr, p_rl, p_rr = struct.unpack_from("<ffff", p, 100)
-        abs_val, = struct.unpack_from("<f", p, 136)
+        abs_val, kers_c, kers_i = struct.unpack_from("<fff", p, 136)
         w_fl, w_fr, w_rl, w_rr = struct.unpack_from("<ffff", p, 148)
         t_fl, t_fr, t_rl, t_rr = struct.unpack_from("<ffff", p, 164)
         air_t, road_t = struct.unpack_from("<ff", p, 180)
@@ -121,7 +121,7 @@ while True:
                 break
 
         msg = struct.pack(
-            "<4siififfiiiiiiifffffffffffffffiifi12f",
+            "<4siififfiiiiiiifffffffffffffffiifi14f",
             b"ACSM",
             int(rpms), int(max_rpm), _clean_f(speed_kmh), int(gear),
             _clean_f(fuel), 60.0,
@@ -139,6 +139,7 @@ while True:
             _clean_f(ti_fr, 25.0), _clean_f(tm_fr, 25.0), _clean_f(to_fr, 25.0),
             _clean_f(ti_rl, 25.0), _clean_f(tm_rl, 25.0), _clean_f(to_rl, 25.0),
             _clean_f(ti_rr, 25.0), _clean_f(tm_rr, 25.0), _clean_f(to_rr, 25.0),
+            _clean_f(kers_c, 0.0), _clean_f(kers_i, 0.0),
         )
         sock.sendto(msg, TARGET)
     except Exception:
