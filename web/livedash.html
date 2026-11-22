@@ -17,6 +17,7 @@
   .gear { font-size:5.2rem; font-weight:900; color:#f1c40f; line-height:1; }
     .elec-item.ers-active { background: rgba(34,197,94,0.22); border: 1px solid #22c55e; color: #22c55e; box-shadow: 0 0 12px rgba(34,197,94,0.45); }
   .elec-item.ers-charging { background: rgba(56,189,248,0.18); border: 1px solid #38bdf8; color: #38bdf8; }
+  .elec-item.tc-on, .elec-item.abs-on { background: rgba(245,158,11,0.22); border: 1px solid #f59e0b; color: #fbbf24; }
   .card.flag-yellow { border:2px solid #eab308; box-shadow:0 0 18px rgba(234,179,8,0.45); }
   .card.flag-blue { border:2px solid #3b82f6; box-shadow:0 0 18px rgba(59,130,246,0.45); }
   .card.flag-white { border:2px solid #f8fafc; box-shadow:0 0 18px rgba(248,250,252,0.35); }
@@ -202,8 +203,22 @@
       document.getElementById("gear").textContent = d.gear;
       document.getElementById("speed").textContent = d.speed;
       document.getElementById("rpm").textContent = d.rpm;
-      document.getElementById("tc").textContent = (d.connected && typeof d.tc === "number") ? d.tc : "--";
-      document.getElementById("abs").textContent = (d.connected && typeof d.abs === "number") ? d.abs : "--";
+      const tcEl = document.getElementById("tc");
+      const absEl = document.getElementById("abs");
+      if (d.connected && typeof d.tc === "number") {
+        tcEl.textContent = d.tc > 0 ? d.tc : "OFF";
+        tcEl.parentElement.classList.toggle("tc-on", d.tc > 0);
+      } else {
+        tcEl.textContent = "--";
+        tcEl.parentElement.classList.remove("tc-on");
+      }
+      if (d.connected && typeof d.abs === "number") {
+        absEl.textContent = d.abs > 0 ? d.abs : "OFF";
+        absEl.parentElement.classList.toggle("abs-on", d.abs > 0);
+      } else {
+        absEl.textContent = "--";
+        absEl.parentElement.classList.remove("abs-on");
+      }
       document.getElementById("bb").textContent = (d.connected && d.brake_bias > 1.0) ? d.brake_bias.toFixed(1) + "%" : "--.-%";
 
       const gCard = document.getElementById("gearCard");

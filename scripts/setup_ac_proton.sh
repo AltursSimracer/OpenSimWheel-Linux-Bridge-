@@ -102,6 +102,22 @@ while True:
         tm_fl, tm_fr, tm_rl, tm_rr = struct.unpack_from("<ffff", p, 384)
         to_fl, to_fr, to_rl, to_rr = struct.unpack_from("<ffff", p, 400)
 
+        _tc_step, = struct.unpack_from("<i", g, 1372)
+        _abs_step, = struct.unpack_from("<i", g, 1384)
+        _tc_f = _clean_f(tc_val)
+        _abs_f = _clean_f(abs_val)
+        if 0 < _tc_step <= 20:
+            tc_out = _tc_step
+        else:
+            tc_out = int(round(_tc_f * 10)) if 0.0 < _tc_f <= 1.0 else int(round(_tc_f))
+            if _tc_f > 0.001 and tc_out == 0:
+                tc_out = 1
+        if 0 < _abs_step <= 20:
+            abs_out = _abs_step
+        else:
+            abs_out = int(round(_abs_f * 10)) if 0.0 < _abs_f <= 1.0 else int(round(_abs_f))
+            if _abs_f > 0.001 and abs_out == 0:
+                abs_out = 1
         if not (-10.0 <= air_t <= 60.0): air_t = 22.0
         if not (-10.0 <= road_t <= 80.0): road_t = 26.0
 
@@ -111,8 +127,18 @@ while True:
         cur_sector, last_sector_ms = struct.unpack_from("<ii", g, 164)
         norm_spline, = struct.unpack_from("<f", g, 248)
         flag_id, = struct.unpack_from("<i", g, 1328)
-        tc_lvl, = struct.unpack_from("<i", g, 1372)
-        abs_lvl, = struct.unpack_from("<i", g, 1384)
+        if not os.path.exists(r"C:\osw_shm\gfx_dump.txt"):
+            with open(r"C:\osw_shm\gfx_dump.txt", "w") as df:
+                for off in range(0, len(g), 4):
+                    iv, = struct.unpack_from("<i", g, off)
+                    if 1 <= iv <= 15:
+                        df.write(f"gfx {off}: {iv}\n")
+                for off in range(0, len(p), 4):
+                    iv, = struct.unpack_from("<i", p, off)
+                    fv, = struct.unpack_from("<f", p, off)
+                    if (1 <= iv <= 15) or (0.05 <= fv <= 1.0):
+                        df.write(f"phys {off}: int={iv} float={fv:.3f}\n")
+
 
         shm_stat.seek(0)
         s = shm_stat.read(256)
@@ -136,7 +162,7 @@ while True:
             _clean_f(air_t, 22.0), _clean_f(road_t, 26.0),
             _clean_f(p_fl), _clean_f(p_fr), _clean_f(p_rl), _clean_f(p_rr),
             _clean_f(w_fl, 100.0), _clean_f(w_fr, 100.0), _clean_f(w_rl, 100.0), _clean_f(w_rr, 100.0),
-            int(tc_lvl), int(abs_lvl),
+            tc_out, abs_out,
             _clean_f(bb_val), int(flag_id),
             _clean_f(ti_fl, 25.0), _clean_f(tm_fl, 25.0), _clean_f(to_fl, 25.0),
             _clean_f(ti_fr, 25.0), _clean_f(tm_fr, 25.0), _clean_f(to_fr, 25.0),
