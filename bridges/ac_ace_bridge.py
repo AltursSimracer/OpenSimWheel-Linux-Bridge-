@@ -73,6 +73,14 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
                 ers_pct = round(_kc, 1)
             if _ki > 0.05:
                 ers_active = 1
+        elif len(data) == AC_PKT_SIZE + 56:
+            _kc, _ki = struct.unpack_from("<ff", data, AC_PKT_SIZE + 48)
+            if 0.0 <= _kc <= 1.0:
+                ers_pct = round(_kc * 100.0, 1)
+            elif 1.0 < _kc <= 100.0:
+                ers_pct = round(_kc, 1)
+            if _ki > 0.05:
+                ers_active = 1
         flag_str = "none"
         if len(data) >= AC_PKT_SIZE + 48:
             tc_v, abs_v, bb_raw, flag_id = struct.unpack_from("<iifi", data, AC_PKT_SIZE + 32)
@@ -226,6 +234,8 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
         distanza_giro = float(max(0.0, min(1.0, lap_progress)) * track_len_m)
         distanza_tot = float(((lap_num - 1) + max(0.0, min(1.0, lap_progress))) * track_len_m)
 
+        _fid = (globals().get("_OSW_FRAME_ID", 0) + 1) & 0xFFFFFFFF
+        globals()["_OSW_FRAME_ID"] = _fid
         hdr = "<HBBBBQfIBB"
         h1 = struct.pack(hdr, 2020, 1, 0, 1, 1, 123456789, float(tempo), _fid, 0, 0)
         p1 = bytearray(227)
@@ -293,8 +303,6 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
             dash_state["ers_mode"] = _ers_mod
         # --- FINE PATCH ERS ---
 
-        _fid = (globals().get("_OSW_FRAME_ID", 0) + 1) & 0xFFFFFFFF
-        globals()["_OSW_FRAME_ID"] = _fid
         h0 = struct.pack(hdr, 2020, 1, 0, 1, 0, 123456789, float(tempo), _fid, 0, 0)
         p0 = bytearray(1440)
         out_sock.sendto(h0 + p0, (ip_display, porta_display))
