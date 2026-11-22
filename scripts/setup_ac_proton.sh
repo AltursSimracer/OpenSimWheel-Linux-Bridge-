@@ -102,25 +102,6 @@ while True:
         tm_fl, tm_fr, tm_rl, tm_rr = struct.unpack_from("<ffff", p, 384)
         to_fl, to_fr, to_rl, to_rr = struct.unpack_from("<ffff", p, 400)
 
-        _tc_step, = struct.unpack_from("<i", g, 1372)
-        _abs_step, = struct.unpack_from("<i", g, 1384)
-        _tc_f = _clean_f(tc_val)
-        _abs_f = _clean_f(abs_val)
-        if 0 < _tc_step <= 20:
-            tc_out = _tc_step
-        else:
-            tc_out = int(round(_tc_f * 10)) if 0.0 < _tc_f <= 1.0 else int(round(_tc_f))
-            if _tc_f > 0.001 and tc_out == 0:
-                tc_out = 1
-        if 0 < _abs_step <= 20:
-            abs_out = _abs_step
-        elif _abs_f <= 0.001:
-            abs_out = 0
-        elif _abs_f <= 1.0:
-            # Scala fine AC ABS (es. 0.10->1, 0.12->2, 0.14->3, 0.16->4...)
-            abs_out = int(round(_abs_f * 10)) if _abs_f >= 0.15 else 1
-        else:
-            abs_out = int(round(_abs_f))
         if not (-10.0 <= air_t <= 60.0): air_t = 22.0
         if not (-10.0 <= road_t <= 80.0): road_t = 26.0
 
@@ -130,6 +111,27 @@ while True:
         cur_sector, last_sector_ms = struct.unpack_from("<ii", g, 164)
         norm_spline, = struct.unpack_from("<f", g, 248)
         flag_id, = struct.unpack_from("<i", g, 1328)
+        _tc_step, = struct.unpack_from("<i", g, 1372)
+        _abs_step, = struct.unpack_from("<i", g, 1384)
+        _tc_f = _clean_f(tc_val)
+        _abs_f = _clean_f(abs_val)
+        if 0 < _tc_step <= 20:
+            tc_out = _tc_step
+        elif _tc_f <= 0.001:
+            tc_out = 0
+        elif _tc_f <= 0.25:
+            # Mappatura progressiva 1..9 per i livelli TC Ferrari/GT in AC (0.02 -> 1 .. 0.18 -> 9)
+            tc_out = max(1, min(12, int(round((_tc_f - 0.01) / 0.018)) + 1))
+        else:
+            tc_out = int(round(_tc_f))
+        if 0 < _abs_step <= 20:
+            abs_out = _abs_step
+        elif _abs_f <= 0.001:
+            abs_out = 0
+        elif _abs_f <= 1.0:
+            abs_out = int(round(_abs_f * 10)) if _abs_f >= 0.15 else 1
+        else:
+            abs_out = int(round(_abs_f))
         if not os.path.exists(r"C:\osw_shm\gfx_dump.txt"):
             with open(r"C:\osw_shm\gfx_dump.txt", "w") as df:
                 for off in range(0, len(g), 4):
