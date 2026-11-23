@@ -29,11 +29,9 @@ Routes real-time telemetry (**RPM, shift LEDs, gears, speed, fuel & remaining la
 
 ## Live Demo Video / Video Dimostrativo
 
-Real-world test recorded on **CachyOS (KDE Plasma)** with **Le Mans Ultimate (LMU)** and a **Thrustmaster SF1000** wheel over local Wi-Fi UDP (recorded on v1.3.0; **v1.4.0** upgrades polling to **100Hz**, adds **rFactor 2**, 3-zone IMO tyre temps, and smart auto-sniffer):
+Real-world test recorded on **CachyOS (KDE Plasma)** running **Le Mans Ultimate (LMU)** (Ferrari 499P at Monza) at **100Hz** with a **Thrustmaster SF1000** wheel and **Web Live Dash v2** on an iPad over local Wi-Fi:
 
-Test reale registrato su **CachyOS (KDE Plasma)** con **Le Mans Ultimate (LMU)** e volante **Thrustmaster SF1000** via UDP Wi-Fi locale (registrato su v1.3.0; la **v1.4.0** porta l'aggiornamento a **100Hz**, aggiunge **rFactor 2**, temperature gomme IMO a 3 zone e rilevamento automatico di rete):
-
-- Watch on YouTube / Guarda su YouTube: https://youtu.be/jkMMlw8S-hk
+- Watch on YouTube / Guarda su YouTube: https://youtu.be/rb76y_Ygq0E
 
 ---
 
