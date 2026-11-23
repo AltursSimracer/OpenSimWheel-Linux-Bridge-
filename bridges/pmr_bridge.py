@@ -277,7 +277,7 @@ def elabora_pacchetto_pmr(data, out_sock, ip_display, porta_display, DASH_STATE,
             fia_flag = 2 if int(tempo * 20) % 2 == 0 else 4
         else:
             fia_flag = 0
-               struct.pack_into("<b", p7, 38, fia_flag)
+        struct.pack_into("<b", p7, 38, fia_flag)
 
         # --- INIZIO PATCH ERS UNIVERSALE + SF1000 (PACKET 7 - OFFSET ESATTO 38/39) ---
         _ers_pct = float(locals().get("ers_pct", locals().get("ers_charge", 0.0)))
