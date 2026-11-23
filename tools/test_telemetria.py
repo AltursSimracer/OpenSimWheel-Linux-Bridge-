@@ -1,4 +1,3 @@
-cat << 'EOF' > /tmp/test_telemetria.py
 #!/usr/bin/env python3
 import socket
 import struct

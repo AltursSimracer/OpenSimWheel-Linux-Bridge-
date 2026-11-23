@@ -290,7 +290,7 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
             fia_flag = _fia_map.get(flag_str, 0)
 
         # --- INIZIO PATCH ERS UNIVERSALE + SF1000 (PACKET 7 - OFFSET ESATTO 38/39) ---
-        _ers_pct = float(locals().get("ers_pct", locals().get("ers_charge", dash_state.get("ers", 0.0))))
+        _ers_pct = float(ers_pct)
         _ers_act = int(locals().get("ers_active", 0))
         _ers_chg = int(locals().get("ers_charging", 0))
         _ers_mod = 2 if _ers_act else (1 if _ers_pct > 0 else 0)
@@ -318,17 +318,18 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
 
         h0 = struct.pack(hdr, 2020, 1, 0, 1, 0, 123456789, float(tempo), _fid, 0, 0)
         p0 = bytearray(1440)
-        out_sock.sendto(h0 + p0, (ip_display, porta_display))
-        out_sock.sendto(h1 + p1, (ip_display, porta_display))
-        out_sock.sendto(h2 + p2, (ip_display, porta_display))
+        pkts = [h0 + p0, h1 + p1, h2 + p2]
+
         if tempo - globals().get("_OSW_P4_TS", 0.0) >= 0.5:
             globals()["_OSW_P4_TS"] = tempo
             h4 = struct.pack(hdr, 2020, 1, 0, 1, 4, 123456789, float(tempo), _fid, 0, 0)
             p4 = bytearray(1189)
             p4[0] = 1
             struct.pack_into("<BBBBBBB48sB", p4, 1, 0, 255, 0, 1, 148, 0, b"OPENSIMWHEEL\x00", 1)
-            out_sock.sendto(h4 + p4, (ip_display, porta_display))
-        out_sock.sendto(h6 + p6, (ip_display, porta_display))
-        out_sock.sendto(h7 + p7, (ip_display, porta_display))
+            pkts.append(h4 + p4)
+
+        pkts.extend([h6 + p6, h7 + p7])
+        ROUTER.send_frame(out_sock, ip_display, porta_display, dash_state, f1_packets=pkts)
     except Exception as e:
         logger.warning(f"Errore pacchetto AC/ACE: {e}")
+

@@ -95,7 +95,11 @@ DASH_STATE = {
     "hz": 0.0,
     "last_ts": 0.0,
     "hz_counter": 0,
-    "hz_timer": time.time()
+    "hz_timer": time.time(),
+    "battery_pct": 0.0,   # Percentuale carica batteria (0.0 -> 100.0)
+    "ers_mode": 0,        # Mappa ERS attiva (0=Off, 1=Medium, 2=Hotlap, 3=Overtake)
+    "ers_state": 0,       # Stato istantaneo (0=Idle, 1=Regen/Harvest, 2=Deploy/Boost)
+
 }
 
 _TYRE_EMA_STATE = {"fl": None, "fr": None, "rl": None, "rr": None}
@@ -215,6 +219,17 @@ class LiveDashHandler(BaseHTTPRequestHandler):
             self.send_header("Cache-Control", "no-store")
             self.end_headers()
             self.wfile.write(payload)
+        elif self.path in ("/gt3", "/gt3.html", "/classic", "/classic.html"):
+            fname = "livedash_gt3.html" if "gt3" in self.path else "livedash_classic.html"
+            try:
+                fp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", fname)
+                with open(fp, "rb") as f:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.end_headers()
+                    self.wfile.write(f.read())
+            except Exception:
+                self.send_error(404)
         elif self.path in ("/timing", "/timing.html"):
             try:
                 p = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "timing.html")
@@ -736,12 +751,23 @@ def load_and_verify_sim_ini(sim_code):
         subprocess.run(["bash", setup_sh], check=False)
 
 
+from bridges.output_router import ROUTER  # (metti questo import in cima al file insieme agli altri)
+
 def main():
     set_proton_stop_flag(False)
     load_and_verify_sim_ini(os.environ.get("OSW_SIM_MODE", "PMR"))
     lingua, testi, icon_path, ip_nic, ip_display, porta_gioco, porta_disp = carica_configurazione()
     _cfg_tmp = configparser.ConfigParser()
     _cfg_tmp.read(os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.ini"), encoding="utf-8")
+
+    ROUTER.configure(
+        enable_f1=_cfg_tmp.getboolean("PROTOCOLLI", "f1_udp", fallback=True),
+        enable_json=_cfg_tmp.getboolean("PROTOCOLLI", "open_json_udp", fallback=True),
+        json_port=_cfg_tmp.getint("PROTOCOLLI", "open_json_port", fallback=20778),
+        serial_port=_cfg_tmp.get("PROTOCOLLI", "serial_port", fallback=""),
+        serial_baud=_cfg_tmp.getint("PROTOCOLLI", "serial_baud", fallback=115200),
+    )
+
     dispositivo = _cfg_tmp.get("HARDWARE", "periferica", fallback="Universal F1-UDP Wheel / Wi-Fi Display / Web LiveDash")
     print(f"=== {testi['title']} ({lingua.upper()}) - {dispositivo} ===")
 

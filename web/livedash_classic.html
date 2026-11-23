@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OpenSimWheel Live Dash v2</title>
+<style>
+  :root { --bg: #080a0f; --card: #111622; --border: #1e2738; --text: #f1f5f9; --muted: #64748b; --accent: #38bdf8; --green: #22c55e; --amber: #f59e0b; --red: #ef4444; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; padding: 10px; gap: 10px; transition: box-shadow 0.2s; }
+  body.flag-yellow { box-shadow: inset 0 0 0 6px #eab308; }
+  body.flag-blue { box-shadow: inset 0 0 0 6px #3b82f6; }
+  body.flag-green { box-shadow: inset 0 0 0 6px #22c55e; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #1e293b; color: #94a3b8; letter-spacing: 0.5px; }
+  .badge.live { background: rgba(34,197,94,0.18); color: var(--green); border: 1px solid rgba(34,197,94,0.4); }
+  .nav-btn { text-decoration: none; font-size: 14px; font-weight: 800; padding: 5px 12px; border-radius: 6px; background: #1d4ed8; color: #fff; }
+  .rpm-bar { display: grid; grid-template-columns: repeat(15, 1fr); gap: 5px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; }
+  .led { height: 15px; border-radius: 4px; background: #1a2233; }
+  .led.g.on { background: #22c55e; box-shadow: 0 0 10px #22c55e; }
+  .led.r.on { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+  .led.b.on { background: #3b82f6; box-shadow: 0 0 12px #3b82f6; }
+
+  .grid-main { display: grid; grid-template-columns: 1.12fr 0.72fr 1.16fr; gap: 10px; flex: 1; }
+  @media (max-width: 860px) { .grid-main { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 11px; display: flex; flex-direction: column; justify-content: space-between; }
+  .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
+
+  .gear-box { align-items: center; justify-content: center; text-align: center; padding: 10px 8px; background: radial-gradient(circle at center, #161f33 0%, #0e131f 100%); }
+  .gear-val { font-size: 85px; font-weight: 900; line-height: 0.95; color: #fff; }
+  .gear-val.shift { color: #ef4444; text-shadow: 0 0 24px rgba(239,68,68,0.6); }
+  .speed-row { display: flex; flex-direction: column; gap: 8px; width: 100%; margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .stat-big { font-size: 29px; font-weight: 800; line-height: 1.05; }
+  .stat-sub { font-size: 12px; color: var(--muted); font-weight: 700; }
+
+  .ers-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .ers-pct { font-size: 36px; font-weight: 900; color: var(--amber); }
+  .ers-pct.deploy { color: var(--green); }
+  .ers-pct.regen { color: var(--accent); }
+  .ers-mode { font-size: 13px; font-weight: 800; padding: 3px 8px; border-radius: 5px; background: #1e293b; color: #cbd5e1; }
+  .ers-track { width: 100%; height: 20px; background: #090d16; border: 1px solid #26334d; border-radius: 7px; overflow: hidden; padding: 2px; }
+  .ers-fill { height: 100%; width: 0%; border-radius: 4px; background: linear-gradient(90deg, #d97706, #fbbf24); transition: width 0.08s linear; }
+  .ers-fill.deploy { background: linear-gradient(90deg, #16a34a, #4ade80); }
+  .ers-fill.regen { background: linear-gradient(90deg, #0284c7, #38bdf8); }
+  .elec-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+  .elec-pill { background: #0c101a; border: 1px solid var(--border); border-radius: 8px; padding: 6px 4px; text-align: center; }
+  .elec-pill .lbl { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .elec-pill .val { font-size: 17px; font-weight: 800; margin-top: 2px; }
+  .drs-on { background: rgba(34,197,94,0.2) !important; border-color: var(--green) !important; color: var(--green); }
+
+  .tyres-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tyre-box { background: #0c101a; border: 1px solid var(--border); border-radius: 10px; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .tyre-top { display: flex; justify-content: space-between; align-items: center; }
+  .tyre-name { font-size: 13px; font-weight: 800; color: var(--muted); }
+  .tyre-psi { font-size: 16px; font-weight: 800; color: #e2e8f0; }
+  .tyre-body { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tyre-silhouette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; width: 68px; height: 74px; padding: 3px; background: #07090e; border: 2px solid #334155; border-radius: 14px; box-shadow: inset 0 0 8px rgba(0,0,0,0.8); }
+  .tread-strip { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 4px 1px; font-size: 11px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.85); background: #1e293b; transition: background 0.25s ease; }
+  .tread-strip.s0 { border-radius: 9px 2px 2px 9px; }
+  .tread-strip.s1 { border-radius: 2px; }
+  .tread-strip.s2 { border-radius: 2px 9px 9px 2px; }
+  .tyre-stats { flex: 1; display: flex; flex-direction: column; gap: 4px; text-align: right; }
+  .wear-pct { font-size: 20px; font-weight: 900; color: var(--green); }
+  .temp-avg { font-size: 14px; font-weight: 700; color: #94a3b8; }
+
+  .chrono-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .chrono-item { background: #0c101a; border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+  .chrono-val { font-size: 19px; font-weight: 800; margin-top: 2px; }
+  .fuel-warn { color: var(--amber) !important; }
+  .fuel-crit { color: var(--red) !important; }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="badge" id="statusBadge">OFFLINE</span>
+      <span class="badge" id="simBadge">OPENSIMWHEEL</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="badge" id="posBadge">P-- | LAP --</span>
+      <a href="/gt3" class="nav-btn" style="background:#b45309;">GT3 DDU</a>
+      <a href="/timing" class="nav-btn">TIMING &rarr;</a>
+    </div>
+  </div>
+  <div class="rpm-bar" id="rpmBar"></div>
+  <div class="grid-main">
+    <div class="col">
+      <div class="card">
+        <div class="card-title"><span>BATTERIA / VIRTUAL ENERGY</span><span id="ersStateLbl">STANDBY</span></div>
+        <div class="ers-header"><div class="ers-pct" id="ersPct">--%</div><div class="ers-mode" id="ersMode">MODE --</div></div>
+        <div class="ers-track"><div class="ers-fill" id="ersFill"></div></div>
+        <div class="elec-grid">
+          <div class="elec-pill"><div class="lbl">TC</div><div class="val" id="tcVal">-</div></div>
+          <div class="elec-pill"><div class="lbl">ABS</div><div class="val" id="absVal">-</div></div>
+          <div class="elec-pill"><div class="lbl">BIAS</div><div class="val" id="bbVal">--.-%</div></div>
+          <div class="elec-pill" id="drsBox"><div class="lbl">DRS</div><div class="val" id="drsVal">OFF</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>CARBURANTE &amp; MOTORE</span><span id="hzLbl">0 Hz</span></div>
+        <div class="chrono-grid">
+          <div class="chrono-item"><div class="stat-sub">FUEL (L) / L-GIRO</div><div class="chrono-val" id="fuelVal">--.-</div></div>
+          <div class="chrono-item"><div class="stat-sub">GIRI RESIDUI</div><div class="chrono-val" id="fuelLaps">--.-</div></div>
+          <div class="chrono-item"><div class="stat-sub">TEMP MOTORE</div><div class="chrono-val" id="engTemp">--&deg;C</div></div>
+          <div class="chrono-item"><div class="stat-sub">PISTA / ARIA</div><div class="chrono-val" id="ambTemp">--&deg; / --&deg;</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card gear-box">
+      <div class="stat-sub">MARCIA</div>
+      <div class="gear-val" id="gearVal">N</div>
+      <div class="speed-row">
+        <div><div class="stat-big" id="speedVal">0</div><div class="stat-sub">KM/H</div></div>
+        <div><div class="stat-big" id="rpmVal">0</div><div class="stat-sub" id="maxRpmLbl">/ 8500 RPM</div></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card">
+        <div class="card-title"><span>PNEUMATICI (IMO &deg;C / USURA / PSI)</span><span>4 RUOTE</span></div>
+        <div class="tyres-grid" id="tyresGrid"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>CRONOMETRO</span><span id="flagLbl">GREEN</span></div>
+        <div class="chrono-grid">
+          <div class="chrono-item"><div class="stat-sub">ULTIMO GIRO</div><div class="chrono-val" id="lastLap">--:--.---</div></div>
+          <div class="chrono-item"><div class="stat-sub">MIGLIOR GIRO</div><div class="chrono-val" id="bestLap" style="color:#a855f7;">--:--.---</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const rpmBar = document.getElementById("rpmBar");
+  for (let i = 0; i < 15; i++) {
+    const d = document.createElement("div");
+    d.className = "led " + (i < 5 ? "g" : (i < 10 ? "r" : "b"));
+    rpmBar.appendChild(d);
+  }
+  const leds = Array.from(rpmBar.children);
+
+  // Orientamento speculare reale: ruote sinistre [O, M, I], ruote destre [I, M, O]
+  const wheelDefs = [
+    { key: "fl", label: "ANT SX (FL)", idx: 0, order: [2, 1, 0], labels: ["O", "M", "I"] },
+    { key: "fr", label: "ANT DX (FR)", idx: 1, order: [0, 1, 2], labels: ["I", "M", "O"] },
+    { key: "rl", label: "POST SX (RL)", idx: 2, order: [2, 1, 0], labels: ["O", "M", "I"] },
+    { key: "rr", label: "POST DX (RR)", idx: 3, order: [0, 1, 2], labels: ["I", "M", "O"] }
+  ];
+
+  const tyresGrid = document.getElementById("tyresGrid");
+  wheelDefs.forEach(w => {
+    tyresGrid.innerHTML += `
+      <div class="tyre-box">
+        <div class="tyre-top"><span class="tyre-name">${w.label}</span><span class="tyre-psi" id="psi_${w.key}">--.- PSI</span></div>
+        <div class="tyre-body">
+          <div class="tyre-silhouette">
+            <div class="tread-strip s0" id="imo_${w.key}_0"><span>${w.labels[0]}</span><span>--</span></div>
+            <div class="tread-strip s1" id="imo_${w.key}_1"><span>${w.labels[1]}</span><span>--</span></div>
+            <div class="tread-strip s2" id="imo_${w.key}_2"><span>${w.labels[2]}</span><span>--</span></div>
+          </div>
+          <div class="tyre-stats">
+            <div class="wear-pct" id="wear_${w.key}">100%</div>
+            <div class="stat-sub">USURA</div>
+            <div class="temp-avg" id="tavg_${w.key}">--&deg;C</div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  function wearColor(w) {
+    if (w > 70) return "#22c55e";
+    if (w > 45) return "#eab308";
+    if (w > 25) return "#f97316";
+    return "#ef4444";
+  }
+
+  function tempColor(t) {
+    if (!t || t <= 0) return "#1e293b";
+    if (t < 55) return "#2563eb";
+    if (t < 72) return "#0284c7";
+    if (t <= 96) return "#16a34a";
+    if (t <= 108) return "#ea580c";
+    return "#dc2626";
+  }
+
+  function fmtLap(sec) {
+    if (!sec || sec <= 0) return "--:--.---";
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toFixed(3).padStart(6, "0");
+    return `${m}:${s}`;
+  }
+
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try {
+      if ("wakeLock" in navigator && !wakeLock) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => { wakeLock = null; });
+      }
+    } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") requestWakeLock();
+  });
+  requestWakeLock();
+
+  async function update() {
+    try {
+      const r = await fetch("/api/telemetry", { cache: "no-store" });
+      const d = await r.json();
+      const sb = document.getElementById("statusBadge");
+      sb.textContent = d.connected ? "LIVE" : "STANDBY";
+      sb.className = d.connected ? "badge live" : "badge";
+      document.getElementById("simBadge").textContent = (d.sim || "BRIDGE").toUpperCase();
+      document.getElementById("posBadge").textContent = `P${d.pos || 1} | LAP ${d.lap || 1}`;
+      document.getElementById("hzLbl").textContent = `${Math.round(d.hz || 0)} Hz`;
+
+      const gearEl = document.getElementById("gearVal");
+      gearEl.textContent = d.gear || "N";
+      gearEl.className = (d.led_pct >= 94) ? "gear-val shift" : "gear-val";
+      document.getElementById("speedVal").textContent = Math.round(d.speed || 0);
+      document.getElementById("rpmVal").textContent = Math.round(d.rpm || 0);
+      document.getElementById("maxRpmLbl").textContent = `/ ${Math.round(d.max_rpm || 8500)} RPM`;
+      const lit = Math.round(((d.led_pct || 0) / 100) * 15);
+      leds.forEach((el, i) => el.classList.toggle("on", i < lit));
+
+      const ersPctEl = document.getElementById("ersPct");
+      const ersFill = document.getElementById("ersFill");
+      const ersStateLbl = document.getElementById("ersStateLbl");
+      const ersModeEl = document.getElementById("ersMode");
+      const modeNames = ["OFF", "MEDIUM", "HOTLAP", "OVERTAKE"];
+      if (d.connected && typeof d.ers === "number" && d.ers >= 0) {
+        const pct = Math.max(0, Math.min(100, d.ers));
+        ersPctEl.textContent = pct.toFixed(1) + "%";
+        ersFill.style.width = pct + "%";
+        ersModeEl.textContent = modeNames.at(d.ers_mode || 0) || "ACTIVE";
+        ersPctEl.classList.remove("deploy", "regen");
+        ersFill.classList.remove("deploy", "regen");
+        if (d.ers_active) {
+          ersPctEl.classList.add("deploy");
+          ersFill.classList.add("deploy");
+          ersStateLbl.textContent = "DEPLOY";
+        } else if (d.ers_charging) {
+          ersPctEl.classList.add("regen");
+          ersFill.classList.add("regen");
+          ersStateLbl.textContent = "REGEN";
+        } else {
+          ersStateLbl.textContent = "READY";
+        }
+      } else {
+        ersPctEl.textContent = "N/D";
+        ersFill.style.width = "0%";
+        ersStateLbl.textContent = "NO HYBRID";
+        ersModeEl.textContent = "MODE --";
+      }
+
+      document.getElementById("tcVal").textContent = d.tc ?? "-";
+      document.getElementById("absVal").textContent = d.abs ?? "-";
+      const bb = d.brake_bias || d.bias || 0;
+      document.getElementById("bbVal").textContent = bb > 1 ? bb.toFixed(1) + "%" : "--.-%";
+      const drsBox = document.getElementById("drsBox");
+      const drsVal = document.getElementById("drsVal");
+      if (d.drs) { drsBox.classList.add("drs-on"); drsVal.textContent = "OPEN"; }
+      else if (d.drs_avail) { drsBox.classList.remove("drs-on"); drsVal.textContent = "AVAIL"; }
+      else { drsBox.classList.remove("drs-on"); drsVal.textContent = "OFF"; }
+
+      const fLitri = d.fuel || 0;
+      const fLaps = d.fuel_laps || 0;
+      const lPerLap = (fLitri > 0.1 && fLaps > 0.1) ? (fLitri / fLaps) : 0;
+      document.getElementById("fuelVal").textContent = lPerLap > 0 ? `${fLitri.toFixed(1)}L (${lPerLap.toFixed(2)})` : `${fLitri.toFixed(1)}L`;
+
+      const fLapsEl = document.getElementById("fuelLaps");
+      fLapsEl.textContent = fLaps.toFixed(1);
+      fLapsEl.classList.remove("fuel-warn", "fuel-crit");
+      if (d.connected && fLitri > 0.1 && fLaps > 0 && fLaps <= 1.5) fLapsEl.classList.add("fuel-crit");
+      else if (d.connected && fLitri > 0.1 && fLaps > 0 && fLaps <= 3.0) fLapsEl.classList.add("fuel-warn");
+
+      document.getElementById("engTemp").textContent = Math.round(d.engine_temp || 0) + "°C";
+      document.getElementById("ambTemp").textContent = `${Math.round(d.track_temp || 0)}° / ${Math.round(d.air_temp || 0)}°`;
+
+      const tp = Array.isArray(d.tyre_press) ? d.tyre_press : [];
+      const tw = Array.isArray(d.tyre_wear) ? d.tyre_wear : [];
+      wheelDefs.forEach(w => {
+        const pVal = tp.at(w.idx) || 0;
+        const wVal = tw.at(w.idx) ?? 100;
+        const wCol = wearColor(wVal);
+        document.getElementById(`psi_${w.key}`).textContent = pVal > 0.5 ? pVal.toFixed(1) + " PSI" : "--.- PSI";
+        const wEl = document.getElementById(`wear_${w.key}`);
+        wEl.textContent = wVal.toFixed(1) + "%";
+        wEl.style.color = wCol;
+
+        const avgT = Math.round(d[`tyre_${w.key}`] || 0);
+        document.getElementById(`tavg_${w.key}`).textContent = avgT > 0 ? avgT + "°C AVG" : "--°C";
+
+        const imo = d[`tyre_${w.key}_imo`] || [avgT, avgT, avgT];
+        [0, 1, 2].forEach(colIdx => {
+          const srcIdx = w.order[colIdx];
+          const t = Math.round(imo.at(srcIdx) || 0);
+          const cell = document.getElementById(`imo_${w.key}_${colIdx}`);
+          cell.innerHTML = `<span>${w.labels[colIdx]}</span><span>${t > 0 ? t + "°" : "--"}</span>`;
+          cell.style.background = tempColor(t);
+        });
+      });
+
+      document.getElementById("lastLap").textContent = fmtLap(d.last_lap);
+      document.getElementById("bestLap").textContent = fmtLap(d.best_lap);
+      const fl = (d.flag || "none").toLowerCase();
+      document.body.className = fl !== "none" ? `flag-${fl}` : "";
+      document.getElementById("flagLbl").textContent = fl.toUpperCase();
+    } catch (e) {}
+    finally { setTimeout(update, 50); }
+  }
+  update();
+</script>
+</body>
+</html>

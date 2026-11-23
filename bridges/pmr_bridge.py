@@ -239,11 +239,15 @@ def elabora_pacchetto_pmr(data, out_sock, ip_display, porta_display, DASH_STATE,
         s1_safe = max(0, min(int(s1_time_ms), 65535))
         s2_safe = max(0, min(int(s2_time_ms), 65535))
 
+        _fid = (globals().get("_OSW_FRAME_ID", 0) + 1) & 0xFFFFFFFF
+        globals()["_OSW_FRAME_ID"] = _fid
+
         hdr = "<HBBBBQfIBB"
         h1 = struct.pack(hdr, 2020, 1, 0, 1, 1, 123456789, float(tempo), _fid, 0, 0)
         p1 = bytearray(227)
         struct.pack_into("<BbbBH", p1, 0, 1, track_temp_c, air_temp_c, 60, track_len_m)
-        struct.pack_into("<BB", p1, 6, 10, 0); struct.pack_into("<B", p1, 8, 0)
+        struct.pack_into("<BB", p1, 6, 10, 0)
+        struct.pack_into("<B", p1, 8, 0)
         struct.pack_into("<B", p1, 19, 0)
 
         h2 = struct.pack(hdr, 2020, 1, 0, 1, 2, 123456789, float(tempo), _fid, 0, 0)
@@ -258,21 +262,20 @@ def elabora_pacchetto_pmr(data, out_sock, ip_display, porta_display, DASH_STATE,
         p6 = bytearray(1323)
         struct.pack_into("<HfffB", p6, 0, speed_kmh, 1.0, 0.0, 0.0, 0)
         struct.pack_into("<bHBBH", p6, 15, int(gear_display), rpm, 0, led_pct, led_bits)
-        struct.pack_into("<BBBB", p6, 44, temp_rl, temp_rr, temp_fl, temp_fr)
-        struct.pack_into("<BBBB", p6, 48, temp_rl, temp_rr, temp_fl, temp_fr)
-        struct.pack_into("<HHHH", p6, 20, 320, 320, 340, 340); struct.pack_into("<H", p6, 36, eng_t if "eng_t" in locals() else int(SHM_DATA.get("engine_temp", 92))); struct.pack_into("<H", p6, 52, eng_t)
+        struct.pack_into("<HHHH", p6, 20, 320, 320, 340, 340)
+        struct.pack_into("<BBBB", p6, 28, temp_rl, temp_rr, temp_fl, temp_fr)
+        struct.pack_into("<BBBB", p6, 32, temp_rl, temp_rr, temp_fl, temp_fr)
+        struct.pack_into("<H", p6, 36, eng_t)
 
         # Pacchetto 7: Car Status (1344 - 24 = 1320 byte totali)
         h7 = struct.pack(hdr, 2020, 1, 0, 1, 7, 123456789, float(tempo), _fid, 0, 0)
         p7 = bytearray(1320)
         struct.pack_into("<BBBBB", p7, 0, 2, 1, 1, 50, 0)
         struct.pack_into("<fff", p7, 5, fuel_in_tank, fuel_capacity, fuel_laps)
-        # Offset 17: maxRPM e idleRPM (fondamentali per far lampeggiare l'SF1000!)
         soglia_cambiata = int(max_rpm * 0.92) if max_rpm > 2000 else 6500
         struct.pack_into("<HHB", p7, 17, soglia_cambiata, idle_rpm, 8)
         struct.pack_into("<BBBB", p7, 25, wear_rl, wear_rr, wear_fl, wear_fr)
         struct.pack_into("<BB", p7, 29, 16, 16)
-        # Alterna 2 (Blu sinistra) e 4 (Rosso destra) al punto di cambiata per illuminare entrambi i lati!
         if in_fuorigiri:
             fia_flag = 2 if int(tempo * 20) % 2 == 0 else 4
         else:
@@ -284,7 +287,6 @@ def elabora_pacchetto_pmr(data, out_sock, ip_display, porta_display, DASH_STATE,
         _ers_act = int(locals().get("ers_active", 0))
         _ers_chg = int(locals().get("ers_charging", 0))
         _ers_mod = int(locals().get("ers_mode", 3 if _ers_act else (1 if _ers_pct > 0 else 0)))
-        # Calcolo delta automatico per mod/sim che aggiornano solo la carica
         _prev_ers = globals().get("_OSW_PREV_ERS", _ers_pct)
         if _ers_pct > 0.0 and _ers_act == 0 and (_ers_pct < _prev_ers - 0.04):
             _ers_act = 1
@@ -294,28 +296,15 @@ def elabora_pacchetto_pmr(data, out_sock, ip_display, porta_display, DASH_STATE,
         globals()["_OSW_PREV_ERS"] = _ers_pct
         _ers_joules = max(0.0, min(4000000.0, (_ers_pct / 100.0) * 4000000.0))
         struct.pack_into("<fB", p7, 39, _ers_joules, _ers_mod)
-        if "DASH_STATE" in locals() or "DASH_STATE" in globals():
-            DASH_STATE["ers"] = round(_ers_pct, 1)
-            DASH_STATE["ers_active"] = _ers_act
-            DASH_STATE["ers_charging"] = _ers_chg
-            DASH_STATE["ers_mode"] = _ers_mod
-        if "dash_state" in locals():
-            dash_state["ers"] = round(_ers_pct, 1)
-            dash_state["ers_active"] = _ers_act
-            dash_state["ers_charging"] = _ers_chg
-            dash_state["ers_mode"] = _ers_mod
+        DASH_STATE["ers"] = round(_ers_pct, 1)
+        DASH_STATE["ers_active"] = _ers_act
+        DASH_STATE["ers_charging"] = _ers_chg
+        DASH_STATE["ers_mode"] = _ers_mod
         # --- FINE PATCH ERS ---
 
-
-        _fid = (globals().get("_OSW_FRAME_ID", 0) + 1) & 0xFFFFFFFF
-        globals()["_OSW_FRAME_ID"] = _fid
         h0 = struct.pack(hdr, 2020, 1, 0, 1, 0, 123456789, float(tempo), _fid, 0, 0)
         p0 = bytearray(1440)
-        out_sock.sendto(h0 + p0, (ip_display, porta_display))
-        out_sock.sendto(h1 + p1, (ip_display, porta_display))
-        out_sock.sendto(h2 + p2, (ip_display, porta_display))
-        out_sock.sendto(h6 + p6, (ip_display, porta_display))
-        out_sock.sendto(h7 + p7, (ip_display, porta_display))
+        pkts = [h0 + p0, h1 + p1, h2 + p2, h6 + p6, h7 + p7]
+        ROUTER.send_frame(out_sock, ip_display, porta_display, DASH_STATE, f1_packets=pkts)
     except Exception as e:
-        logger.warning(f"Errore elaborazione pacchetto: {e}")
-
+        logger.warning(f"Errore elaborazione pacchetto PMR: {e}")

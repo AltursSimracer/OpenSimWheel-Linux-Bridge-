@@ -1,4 +1,5 @@
 import ctypes, struct, socket, time, math
+import os, sys
 
 k32 = ctypes.windll.kernel32
 k32.OpenFileMappingW.restype = ctypes.c_void_p
@@ -6,6 +7,7 @@ k32.MapViewOfFile.restype = ctypes.c_void_p
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 DEST = ("127.0.0.1", 9009)
+
 
 hMap = None
 ptr = None
@@ -33,6 +35,8 @@ def find_player_idx(raw):
     return -1
 
 while True:
+    if os.path.exists(r"C:\osw_shm\stop.flag"):
+        sys.exit(0)
     if not connect_lmu():
         time.sleep(0.5)
         continue

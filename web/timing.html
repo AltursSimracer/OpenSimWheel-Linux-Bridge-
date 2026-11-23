@@ -116,9 +116,6 @@
       const curSim = (d.sim || "").toUpperCase(), curBest = d.best_lap || 0;
       if ((prevSim && curSim && curSim !== prevSim) || (prevBest > 0 && curBest === 0)) { bestS1 = bestS2 = bestS3 = 0; }
       prevSim = curSim; prevBest = curBest;
-      const curSim = (d.sim || "").toUpperCase(), curBest = d.best_lap || 0;
-      if ((prevSim && curSim && curSim !== prevSim) || (prevBest > 0 && curBest === 0)) { bestS1 = bestS2 = bestS3 = 0; }
-      prevSim = curSim; prevBest = curBest;
 
       const sb = document.getElementById("statusBadge");
       sb.textContent = d.connected ? "LIVE" : "STANDBY";
@@ -126,7 +123,26 @@
       document.getElementById("simBadge").textContent = (d.sim || "PITWALL").toUpperCase();
       document.getElementById("posBadge").textContent = `P${d.pos || 1} | LAP ${d.lap || 1}`;
 
-      document.getElementById("curLap").textContent = d.cur_lap > 0.01 ? fmtTime(d.cur_lap) : "0:00.000";
+            let liveCur = d.cur_lap || 0;
+      if (d.connected && liveCur <= 0.01) {
+        if (window._lastLapNum === undefined) window._lastLapNum = d.lap;
+        if (d.lap !== window._lastLapNum) {
+          window._lastLapNum = d.lap;
+          window._lapStartTs = performance.now();
+        } else if (!window._lapStartTs && (d.speed || 0) > 2) {
+          window._lapStartTs = performance.now();
+        }
+        if (window._lapStartTs) {
+          liveCur = (performance.now() - window._lapStartTs) / 1000.0;
+        }
+      } else if (liveCur > 0.01) {
+        window._lapStartTs = null;
+        window._lastLapNum = d.lap;
+      } else if (!d.connected) {
+        window._lapStartTs = null;
+        window._lastLapNum = undefined;
+      }
+      document.getElementById("curLap").textContent = liveCur > 0.01 ? fmtTime(liveCur) : "0:00.000";
       document.getElementById("lastLap").textContent = fmtTime(d.last_lap);
       document.getElementById("bestLap").textContent = fmtTime(d.best_lap);
 

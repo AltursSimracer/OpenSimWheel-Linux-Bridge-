@@ -106,8 +106,24 @@ while True:
         t_fl, t_fr, t_rl, t_rr = struct.unpack_from("<ffff", buf, 1748)
         p_fl, p_fr, p_rl, p_rr = struct.unpack_from("<ffff", buf, 1796)
 
+        # Lettura Push-to-Pass (offset 1560) + BatterySoC (offset 2208)
+        p2p_avail, p2p_eng, p2p_left = struct.unpack_from("<iii", buf, 1560)
+        bat_soc = struct.unpack_from("<f", buf, 2208)[0] if len(buf) >= 2212 else -1.0
+
+        if 0.0 <= cf(bat_soc, -1.0) <= 100.0:
+            ers_pct_out = float(bat_soc)
+            ers_act_out = 1 if (cf(bat_soc) > 0.0 and p2p_eng == 1) else 0
+        elif p2p_avail == 1 and p2p_left >= 0:
+            ers_pct_out = min(100.0, float(p2p_left) * 10.0)
+            ers_act_out = 1 if p2p_eng == 1 else 0
+        else:
+            ers_pct_out = -1.0
+            ers_act_out = 0
+
+        imo_vals = struct.unpack_from("<12f", buf, 1700)
+
         msg = struct.pack(
-            "<4siififffffffiifffffffffffffffiifi",
+            "<4siififffffffiifffffffffffffffiifi12ffi",
             b"R3EM",
             max(0, rpm), max(1000, max_rpm), max(0.0, speed_kmh), gear,
             max(0.0, cf(fuel_l)), max(1.0, cf(max_fuel_l, 50.0)),
@@ -117,7 +133,9 @@ while True:
             cf(t_fl, 60.0), cf(t_fr, 60.0), cf(t_rl, 60.0), cf(t_rr, 60.0), 22.0, 26.0,
             cf(p_fl, 0.0), cf(p_fr, 0.0), cf(p_rl, 0.0), cf(p_rr, 0.0),
             cf(w_fl, 1.0), cf(w_fr, 1.0), cf(w_rl, 1.0), cf(w_rr, 1.0),
-            int(tc_set), int(abs_set), cf(bb_rear, 0.0), int(2 if flg_y == 1 else (1 if flg_b == 1 else 0))
+            int(tc_set), int(abs_set), cf(bb_rear, 0.0), int(2 if flg_y == 1 else (1 if flg_b == 1 else 0)),
+            *[cf(x, 60.0) for x in imo_vals],
+            ers_pct_out, ers_act_out
         )
         sock.sendto(msg, TARGET)
     except Exception:
@@ -125,6 +143,3 @@ while True:
         time.sleep(0.5)
     time.sleep(0.025)
 PYEOF
-
-write_launcher "$SHM_DIR" "start_rrre_shm.sh" "rrre_shm_sender.py"
-echo "[OK] RaceRoom (RRRE) ($APPID): configurato con successo in $SHM_DIR!"

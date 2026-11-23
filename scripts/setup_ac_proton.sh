@@ -130,20 +130,8 @@ while True:
             abs_out = 0
         elif _abs_f <= 1.0:
             abs_out = int(round(_abs_f * 10)) if _abs_f >= 0.15 else 1
-        else:
+                      else:
             abs_out = int(round(_abs_f))
-        if not os.path.exists(r"C:\osw_shm\gfx_dump.txt"):
-            with open(r"C:\osw_shm\gfx_dump.txt", "w") as df:
-                for off in range(0, len(g), 4):
-                    iv, = struct.unpack_from("<i", g, off)
-                    if 1 <= iv <= 15:
-                        df.write(f"gfx {off}: {iv}\n")
-                for off in range(0, len(p), 4):
-                    iv, = struct.unpack_from("<i", p, off)
-                    fv, = struct.unpack_from("<f", p, off)
-                    if (1 <= iv <= 15) or (0.05 <= fv <= 1.0):
-                        df.write(f"phys {off}: int={iv} float={fv:.3f}\n")
-
 
         shm_stat.seek(0)
         s = shm_stat.read(256)

@@ -207,6 +207,9 @@ def elabora_pacchetto_rrre(data, out_sock, ip_display, porta_display, dash_state
         distanza_giro = float(max(0.0, min(1.0, lap_progress)) * track_len_m)
         distanza_tot = float(((lap_num - 1) + max(0.0, min(1.0, lap_progress))) * track_len_m)
 
+        _fid = (globals().get("_OSW_FRAME_ID", 0) + 1) & 0xFFFFFFFF
+        globals()["_OSW_FRAME_ID"] = _fid
+
         hdr = "<HBBBBQfIBB"
         h1 = struct.pack(hdr, 2020, 1, 0, 1, 1, 123456789, float(tempo), _fid, 0, 0)
         p1 = bytearray(227)
@@ -263,14 +266,9 @@ def elabora_pacchetto_rrre(data, out_sock, ip_display, porta_display, dash_state
         # --- FINE PATCH ERS ---
 
 
-        _fid = (globals().get("_OSW_FRAME_ID", 0) + 1) & 0xFFFFFFFF
-        globals()["_OSW_FRAME_ID"] = _fid
         h0 = struct.pack(hdr, 2020, 1, 0, 1, 0, 123456789, float(tempo), _fid, 0, 0)
         p0 = bytearray(1440)
-        out_sock.sendto(h0 + p0, (ip_display, porta_display))
-        out_sock.sendto(h1 + p1, (ip_display, porta_display))
-        out_sock.sendto(h2 + p2, (ip_display, porta_display))
-        out_sock.sendto(h6 + p6, (ip_display, porta_display))
-        out_sock.sendto(h7 + p7, (ip_display, porta_display))
+        pkts = [h0 + p0, h1 + p1, h2 + p2, h6 + p6, h7 + p7]
+        ROUTER.send_frame(out_sock, ip_display, porta_display, dash_state, f1_packets=pkts)
     except Exception as e:
         logger.warning(f"Errore pacchetto RRRE: {e}")

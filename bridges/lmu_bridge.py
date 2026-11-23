@@ -1,3 +1,4 @@
+from bridges.output_router import ROUTER
 import struct
 import time
 import math
@@ -78,21 +79,22 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
     speed_kmh = max(0, min(int(round(speed_raw)), 420))
     gear_display = max(-1, min(int(gear_raw), 9))
 
-    idle_rpm = max(1000, int(max_rpm * 0.16))
-    shift_rpm = max(idle_rpm + 1500, int(max_rpm * 0.96))
+    idle_rpm = max(1800, int(max_rpm * 0.45))
+    shift_rpm = max(idle_rpm + 1200, int(max_rpm * 0.96))
 
     in_fuorigiri = (rpm >= shift_rpm and rpm > 2500)
-    if rpm <= idle_rpm + 120:
+    blink_on = (int(tempo * 14) % 2 == 0)
+    if rpm <= idle_rpm:
         led_pct = 0
         led_bits = 0
+    elif in_fuorigiri:
+        led_pct = 100 if blink_on else 0
+        led_bits = 0x7FFF if blink_on else 0
     else:
         span = max(1, shift_rpm - idle_rpm)
-        led_pct = max(0, min(int(round(((rpm - idle_rpm) / span) * 100.0)), 100))
-        if in_fuorigiri:
-            led_bits = 0x7FFF if int(tempo * 20) % 2 == 0 else 0
-        else:
-            num_leds = int(round((led_pct / 100.0) * 15))
-            led_bits = (1 << num_leds) - 1 if num_leds > 0 else 0
+        led_pct = max(1, min(int(round(((rpm - idle_rpm) / span) * 99.0)), 99))
+        num_leds = int(round((led_pct / 100.0) * 15))
+        led_bits = (1 << num_leds) - 1 if num_leds > 0 else 0
 
     # Gomme IMO (FL=0..4, FR=5..9, RL=10..14, RR=15..19)
     press_psi = [wheels[0], wheels[5], wheels[10], wheels[15]]
@@ -211,18 +213,19 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
     p_fl, p_fr, p_rl, p_rr = press_psi
     struct.pack_into("<H", p6, 36, eng_t)
     struct.pack_into("<ffff", p6, 38, p_rl, p_rr, p_fl, p_fr)
-    out_sock.sendto(h6 + p6, (ip_display, porta_display))
+    pkts = [h6 + p6]
 
     if tempo - _LMU_STATE["last_slow_ts"] >= 0.1:
         _LMU_STATE["last_slow_ts"] = tempo
         h0 = struct.pack(hdr, 2020, 1, 0, 1, 0, 123456789, float(tempo), fid, 0, 0)
         p0 = bytearray(1440)
+
         # --- Packet ID 1: SessionData (F1 2020) ---
         h1 = struct.pack(hdr, 2020, 1, 0, 1, 1, 123456789, float(tempo), fid, 0, 0)
         p1 = bytearray(227)
         struct.pack_into("<BbbBH", p1, 0, 1, 28, 22, 60, 5793)
         struct.pack_into("<B", p1, 6, 10)   # m_sessionType: 10 = Race
-        struct.pack_into("<B", p1, 19, 0)   # m_formula: 0 = F1 Modern (ABILITA ERS su SF1000!)
+        struct.pack_into("<B", p1, 19, 0)   # m_formula: 0 = F1 Modern (ABILITA ERS su SF1000)
 
         # --- Packet ID 7: CarStatusData (F1 2020) ---
         h7 = struct.pack(hdr, 2020, 1, 0, 1, 7, 123456789, float(tempo), fid, 0, 0)
@@ -233,19 +236,21 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
         struct.pack_into("<BBBBB", p7, 0, tc_f1, abs_f1, 1, bb_f1, 0)
         struct.pack_into("<fff", p7, 5, fuel_val if fuel_val > 0.1 else 45.0, fuel_cap_val, fuel_laps if fuel_laps > 0.1 else 15.0)
         struct.pack_into("<HHB", p7, 17, shift_rpm, idle_rpm, 8)
-        # Gomme visive (offset 25=actual, 26=visual -> 16=C3 Soft) per evitare campi vuoti
-        struct.pack_into("<BB", p7, 25, 16, 16)
+        struct.pack_into("<BB", p7, 29, 16, 16)
         fia_flag = 2 if (in_fuorigiri and int(tempo * 20) % 2 == 0) else (3 if flag_str == "yellow" else 0)
         ers_joules = max(0.0, min(4000000.0, (ers_pct / 100.0) * 4000000.0))
-        struct.pack_into("<bfB", p7, 38, fia_flag, ers_joules, ers_mode)
-
-
+        sf_ers_mode = 3 if ers_active else (1 if ers_charging else (2 if ers_pct > 0.5 else 0))
+        mguk_harv = 500000.0 if ers_charging else 0.0
+        ers_dep = 500000.0 if ers_active else 0.0
+        struct.pack_into("<bfBfff", p7, 42, fia_flag, ers_joules, sf_ers_mode, mguk_harv, 0.0, ers_dep)
 
         h2 = struct.pack(hdr, 2020, 1, 0, 1, 2, 123456789, float(tempo), fid, 0, 0)
         p2 = bytearray(1168)
         struct.pack_into("<BBBB", p2, 34, max(1, int(place)), max(1, int(current_lap)), 0, 1)
         struct.pack_into("<BBBBB", p2, 41, 0, 0, 2, 4, 2)
-        out_sock.sendto(h0 + p0, (ip_display, porta_display))
-        out_sock.sendto(h2 + p2, (ip_display, porta_display))
-        out_sock.sendto(h1 + p1, (ip_display, porta_display))
-        out_sock.sendto(h7 + p7, (ip_display, porta_display))
+
+        pkts.extend([h0 + p0, h2 + p2, h1 + p1, h7 + p7])
+
+    ROUTER.send_frame(out_sock, ip_display, porta_display, dash_state, f1_packets=pkts)
+
+
