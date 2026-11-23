@@ -7,7 +7,7 @@ Sendet Echtzeit-Telemetrie (**Drehzahl, Schalt-LEDs, Gänge, Geschwindigkeit, Kr
 - **Integriertes Web Live Dash + PitWall Timing** (`Port 8080`), direkt im Browser auf PC, Tablet oder Smartphone nutzbar — ganz ohne zusätzliche Hardware.
 
 ## 1. Installation
-1. Doppelklicke auf **`Installa_OpenSimWheel.desktop`** (oder führe `./core/installer.sh` im Terminal aus).
+1. Doppelklicke auf **`Installa_OpenSimWheel.desktop`** (oder führe `./installer.sh` im Terminal aus).
 2. Wähle im Auswahlfenster die auf deinem PC installierten Simulatoren aus, um deren Proton-Bridges automatisch einzurichten.
 3. Das Programm wird unter `~/.local/share/OpenSimWheel` installiert und erstellt die Verknüpfung **OpenSimWheel Linux** im Anwendungsmenü und auf dem Desktop.
 4. Zur Deinstallation führe `~/.local/share/OpenSimWheel/uninstaller.sh` aus (mit `--purge` werden auch gespeicherte Konfigurationen gelöscht).
@@ -23,12 +23,12 @@ Sendet Echtzeit-Telemetrie (**Drehzahl, Schalt-LEDs, Gänge, Geschwindigkeit, Kr
 
 ### Assetto Corsa Competizione (ACC)
 1. Stelle sicher, dass ACC mindestens einmal über Steam gestartet wurde (`AppID 805550`).
-2. Führe einmalig **`./setup_acc_proton.sh`** aus (oder wähle **ACC** während der Installation), um die Shared-Memory-Bridge im Steam-Proton-Präfix einzurichten.
+2. Führe einmalig **`./scripts/setup_acc_proton.sh`** aus (oder wähle **ACC** während der Installation), um die Shared-Memory-Bridge im Steam-Proton-Präfix einzurichten.
 3. Starte ACC, öffne dann **OpenSimWheel Linux**, wähle **ACC (Assetto Corsa Competizione)** und klicke auf **OK**.
 
 ### Assetto Corsa (AC), Assetto Corsa EVO (ACE) und RaceRoom (RRRE)
 1. Stelle sicher, dass jedes Spiel mindestens einmal über Steam gestartet wurde (`AppID 244210` für AC, `3058630` für ACE, `211500` für RRRE).
-2. Führe einmalig **`./setup_ac_proton.sh`**, **`./setup_ace_proton.sh`** bzw. **`./setup_rrre_proton.sh`** aus (oder wähle sie während der Installation).
+2. Führe einmalig **`./scripts/setup_ac_proton.sh`**, **`./scripts/setup_ace_proton.sh`** bzw. **`./scripts/setup_rrre_proton.sh`** aus (oder wähle sie während der Installation).
 3. Starte den Simulator, öffne **OpenSimWheel Linux**, wähle **AC**, **ACE** oder **RRRE** und klicke auf **OK**.
 
 ### Project Motor Racing (PMR)
@@ -39,3 +39,11 @@ Sendet Echtzeit-Telemetrie (**Drehzahl, Schalt-LEDs, Gänge, Geschwindigkeit, Kr
 - **Auto-Sniffer:** Beim Start erkennt OpenSimWheel automatisch die lokale IP-Adresse deines PCs sowie kompatible WLAN-Displays im Heimnetzwerk.
 - **Web Live Dash (`http://<DEINE_PC_IP>:8080`):** Zeigt Drehzahl-LEDs, Gang, Geschwindigkeit, TC, ABS, Bremsbalance, Flaggen-Status, Kraftstoffverbrauch und Reifentemperaturen (umschaltbar zwischen **MEDIA** und **IMO**).
 - **PitWall Timing (`http://<DEINE_PC_IP>:8080/timing`):** Vollbild-Zeitnahme mit Position, Runde, aktueller/letzter/bester Rundenzeit und allen 3 Sektoren (`S1 / S2 / S3`), optimiert für Tablets und iPads.
+
+## Optionale Kernel-Optimierung (Proton Shared Memory & IPC)
+
+Während der Installation (`./installer.sh`) wirst du gefragt, ob ein optionales Kernel-Profil für Shared Memory (`/etc/sysctl.d/99-opensimwheel-shm.conf`) angewendet werden soll:
+- `kernel.shmmax = 2147483648` und `kernel.shmall = 524288`: sorgt für ausreichend große `/dev/shm`-Puffer für 100Hz-Telemetrie.
+- `kernel.yama.ptrace_scope = 0`: erlaubt externen Telemetrie-Bridges den Zugriff auf den Shared Memory von Wine/Proton-Prozessen auf Distributionen mit restriktiven IPC-Regeln (z. B. Ubuntu/Debian).
+
+> **Hinweis:** Wenn du bereits einen Gaming-Kernel verwendest (z. B. CachyOS, Liquorix) oder `sysctl` nicht ändern möchtest, kannst du bedenkenlos **Nein** wählen. Bei Aktivierung entfernt `./uninstaller.sh` die Datei `/etc/sysctl.d/99-opensimwheel-shm.conf` automatisch.

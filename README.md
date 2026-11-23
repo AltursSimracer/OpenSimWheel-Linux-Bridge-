@@ -12,8 +12,8 @@ Routes real-time telemetry (**RPM, shift LEDs, gears, speed, fuel & remaining la
 - **Zero-Plugin Native rF2 & LMU:** Reads engine, gears, and 4-wheel IMO data directly via Linux kernel memory (`process_vm_readv`) + local REST API (`5397`/`6397`).
 
 ## Quick Installation & Setup
-1. Double-click **`Installa_OpenSimWheel.desktop`** (or run `./core/installer.sh` in terminal) and select the simulators you want to configure automatically.
-2. **Proton Shared Memory Bridges (AC, ACC, ACE, RRRE):** Automatically configured during installation (or run `./setup_ac_proton.sh`, `./setup_acc_proton.sh`, `./setup_ace_proton.sh`, `./setup_rrre_proton.sh` once).
+1. Double-click **`Installa_OpenSimWheel.desktop`** (or run `./installer.sh` in terminal) and select the simulators you want to configure automatically.
+2. **Proton Shared Memory Bridges (AC, ACC, ACE, RRRE):** Automatically configured during installation (or run `./scripts/setup_ac_proton.sh`, `./scripts/setup_acc_proton.sh`, `./scripts/setup_ace_proton.sh`, `./scripts/setup_rrre_proton.sh` once).
 3. **rFactor 2 (rF2), Le Mans Ultimate (LMU), & Project Motor Racing (PMR):** Ready out-of-the-box with no external plugins required.
 4. Launch **OpenSimWheel Linux**, verify the auto-detected IPs, select your simulator (**LMU**, **rF2**, **ACC**, **AC**, **ACE**, **RRRE**, or **PMR**), and click **OK**.
 

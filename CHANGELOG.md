@@ -6,7 +6,7 @@
 - **PitWall Timing & Settore 3 (`S3`):** Calcolo automatico e stabile del terzo settore (`S3`) su tutti i simulatori supportati, con layout ottimizzato anche per iPad e browser mobile (`100dvh` e fetch anti-accavallamento).
 - **ACC Shared Memory Completo (`acpmf_physics`):** Estesa la lettura della memoria condivisa a 512 byte per estrarre anche il **Brake Bias** reale e i 3 settori **IMO** delle gomme.
 - **Fix Le Mans Ultimate (`LMU`) & rFactor 2 (`rF2`):** Risolto un errore sulla lettura delle bandiere di settore REST in LMU, aggiunto il calcolo stabile di `S3` e migliorata la gestione di `tyre_press` e `tyre_wear` al cambio simulatore.
-- **Installer, Uninstaller & Documentazione Multilingua:** Aggiornati `install.sh`, `uninstaller.sh` (con supporto grafico Zenity e flag `--purge`) e allineate tutte e 5 le guide utente (`IT`, `EN`, `DE`, `FR`, `ES`).
+- **Installer, Uninstaller & Documentazione Multilingua:** Aggiornati `installer.sh`, `uninstaller.sh` (con supporto grafico Zenity e flag `--purge`) e allineate tutte e 5 le guide utente (`IT`, `EN`, `DE`, `FR`, `ES`).
 
 ---
 

@@ -7,7 +7,7 @@ Invia telemetria in tempo reale (**giri motore, LED di cambiata, marce, velocit√
 - **Web Live Dash + PitWall Timing integrati** (`porta 8080`), accessibili dal browser di qualsiasi PC, tablet o smartphone senza hardware aggiuntivo.
 
 ## 1. Installazione e Disinstallazione
-1. Esegui **`./install.sh`** da terminale (oppure fai doppio clic su **`Installa_OpenSimWheel.desktop`**).
+1. Esegui **`./installer.sh`** da terminale (oppure fai doppio clic su **`Installa_OpenSimWheel.desktop`**).
 2. Seleziona i simulatori installati: per **rF2** e **LMU** l'installer abilita automaticamente la lettura nativa della RAM (`kernel.yama.ptrace_scope = 0`) senza richiedere alcun plugin esterno.
 3. Il programma viene installato in `~/.local/share/OpenSimWheel`, crea il file centrale `~/.config/OpenSimWheel/osw_bridge.ini` e aggiunge l'icona **OpenSimWheel Linux** nel menu applicazioni e sul Desktop.
 4. Per disinstallare mantenendo le impostazioni esegui `~/.local/share/OpenSimWheel/uninstaller.sh` (oppure `./uninstaller.sh --purge` per rimuovere anche `~/.config/OpenSimWheel`).
@@ -24,22 +24,22 @@ Invia telemetria in tempo reale (**giri motore, LED di cambiata, marce, velocit√
 
 ### Assetto Corsa Competizione (ACC)
 1. Avvia almeno una volta ACC su Steam per inizializzare il prefisso Proton (`AppID 805550`).
-2. Esegui una sola volta **`./setup_acc_proton.sh`** (oppure seleziona **ACC** durante l'installazione) per configurare la lettura della Shared Memory nel prefisso Steam Proton (porte `9000`/`9001`).
+2. Esegui una sola volta **`./scripts/setup_acc_proton.sh`** (oppure seleziona **ACC** durante l'installazione) per configurare la lettura della Shared Memory nel prefisso Steam Proton (porte `9000`/`9001`).
 3. Avvia ACC, apri **OpenSimWheel Linux**, seleziona **ACC (Assetto Corsa Competizione)** e premi **OK**.
 
 ### Assetto Corsa (AC)
 1. Avvia almeno una volta il gioco su Steam per creare il prefisso Proton (`AppID 244210`).
-2. Esegui una sola volta **`./setup_ac_proton.sh`** (porta interna `9003`, con rilascio automatico della memoria al ritorno al menu).
+2. Esegui una sola volta **`./scripts/setup_ac_proton.sh`** (porta interna `9003`, con rilascio automatico della memoria al ritorno al menu).
 3. Avvia AC, apri **OpenSimWheel Linux**, seleziona **AC (Assetto Corsa)** e premi **OK**.
 
 ### Assetto Corsa EVO (ACE)
 1. Avvia almeno una volta il gioco su Steam per creare il prefisso Proton (`AppID 3058630`).
-2. Esegui una sola volta **`./setup_ace_proton.sh`** (porta interna `9005`, lettura nativa `Local\acevo_pmf_*` con rilevamento automatico del limitatore motore reale).
+2. Esegui una sola volta **`./scripts/setup_ace_proton.sh`** (porta interna `9005`, lettura nativa `Local\acevo_pmf_*` con rilevamento automatico del limitatore motore reale).
 3. Avvia ACE, apri **OpenSimWheel Linux**, seleziona **ACE (Assetto Corsa EVO)** e premi **OK**.
 
 ### RaceRoom Racing Experience (RRRE)
 1. Avvia almeno una volta il gioco su Steam per creare il prefisso Proton (`AppID 211500`).
-2. Esegui una sola volta **`./setup_rrre_proton.sh`** (porta interna `9007`, lettura nativa `Local\$R3E`).
+2. Esegui una sola volta **`./scripts/setup_rrre_proton.sh`** (porta interna `9007`, lettura nativa `Local\$R3E`).
 3. **Consigli per volanti su Linux:**
    - Nelle **Propriet√† di RaceRoom su Steam -> Controller**, imposta **Disattiva Steam Input** e nelle **Opzioni di avvio** usa `SDL_JOYSTICK_HIDAPI=1 PROTON_ENABLE_HIDRAW=1 %command%`.
 4. Avvia RaceRoom, apri **OpenSimWheel Linux**, seleziona **RRRE (RaceRoom)** e premi **OK**.
@@ -54,3 +54,10 @@ Invia telemetria in tempo reale (**giri motore, LED di cambiata, marce, velocit√
 - **Web Live Dash (`http://<IP_DEL_TUO_PC>:8080`):** Mostra LED di cambiata, marcia, velocit√†, TC, ABS, ripartizione frenata, bandiere FIA attive, consumo carburante e temperature gomme (commutabile tra **MEDIA** e **IMO**).
 - **PitWall Timing (`http://<IP_DEL_TUO_PC>:8080/timing`):** Schermata a tutto schermo con posizione, giro, tempi attuale/ultimo/migliore e tutti e 3 i settori (`S1 / S2 / S3`), ottimizzata per tablet e iPad.
 
+## Ottimizzazione Opzionale Kernel (Shared Memory & IPC Proton)
+
+Durante l'installazione (`./installer.sh`), viene chiesto se applicare un profilo opzionale per la memoria condivisa del kernel (`/etc/sysctl.d/99-opensimwheel-shm.conf`):
+- `kernel.shmmax = 2147483648` e `kernel.shmall = 524288`: garantiscono buffer `/dev/shm` sufficienti per la telemetria ad alta frequenza (100Hz).
+- `kernel.yama.ptrace_scope = 0`: consente ai bridge esterni di leggere la memoria condivisa esposta dai processi Wine/Proton sulle distribuzioni con restrizioni IPC attive (es. Ubuntu/Debian).
+
+> **Nota:** Se utilizzi gi√† un kernel ottimizzato per il gaming (es. CachyOS, Liquorix) o preferisci non modificare `sysctl`, puoi scegliere **No** in sicurezza. Se attivato, `./uninstaller.sh` rimuove automaticamente `/etc/sysctl.d/99-opensimwheel-shm.conf`.
