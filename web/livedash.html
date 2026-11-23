@@ -287,7 +287,7 @@
         const wCol = wearColor(wVal);
         document.getElementById(`psi_${w.key}`).textContent = pVal > 0.5 ? pVal.toFixed(1) + " PSI" : "--.- PSI";
         const wEl = document.getElementById(`wear_${w.key}`);
-        wEl.textContent = Math.round(wVal) + "%";
+        wEl.textContent = wVal.toFixed(1) + "%";
         wEl.style.color = wCol;
 
         const avgT = Math.round(d[`tyre_${w.key}`] || 0);
