@@ -658,7 +658,7 @@ def elabora_pacchetto_rf2(data, out_sock, ip_display, porta_display, dash_state,
         fia_flag = 2 if int(tempo * 20) % 2 == 0 else 4
     else:
         fia_flag = 3 if dash_state["flag"] == "yellow" else 0
-       struct.pack_into("<b", p7, 38, fia_flag)
+    struct.pack_into("<b", p7, 38, fia_flag)
 
     # --- INIZIO PATCH ERS UNIVERSALE + SF1000 (PACKET 7 - OFFSET ESATTO 38/39) ---
     _ers_pct = float(locals().get("ers_pct", locals().get("ers_charge", 0.0)))
