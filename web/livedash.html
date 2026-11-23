@@ -142,4 +142,178 @@
 
   // Orientamento speculare reale: ruote sinistre [O, M, I], ruote destre [I, M, O]
   const wheelDefs = [
+    { key: "fl", label: "ANT SX (FL)", idx: 0, order:, labels: ["O", "M", "I"] },
+    { key: "fr", label: "ANT DX (FR)", idx: 1, order:, labels: ["I", "M", "O"] },
+    { key: "rl", label: "POST SX (RL)", idx: 2, order:, labels: ["O", "M", "I"] },
+    { key: "rr", label: "POST DX (RR)", idx: 3, order:, labels: ["I", "M", "O"] }
+  ];
 
+  const tyresGrid = document.getElementById("tyresGrid");
+  wheelDefs.forEach(w => {
+    tyresGrid.innerHTML += `
+      <div class="tyre-box">
+        <div class="tyre-top"><span class="tyre-name">${w.label}</span><span class="tyre-psi" id="psi_${w.key}">--.- PSI</span></div>
+        <div class="tyre-body">
+          <div class="tyre-silhouette">
+            <div class="tread-strip s0" id="imo_${w.key}_0"><span>${w.labels[0]}</span><span>--</span></div>
+            <div class="tread-strip s1" id="imo_${w.key}_1"><span>${w.labels[1]}</span><span>--</span></div>
+            <div class="tread-strip s2" id="imo_${w.key}_2"><span>${w.labels[2]}</span><span>--</span></div>
+          </div>
+          <div class="tyre-stats">
+            <div class="wear-pct" id="wear_${w.key}">100%</div>
+            <div class="stat-sub">USURA</div>
+            <div class="temp-avg" id="tavg_${w.key}">--&deg;C</div>
+          </div>
+        </div>
+      </div>`;
+  });
+
+  function wearColor(w) {
+    if (w > 70) return "#22c55e";
+    if (w > 45) return "#eab308";
+    if (w > 25) return "#f97316";
+    return "#ef4444";
+  }
+
+  function tempColor(t) {
+    if (!t || t <= 0) return "#1e293b";
+    if (t < 55) return "#2563eb";
+    if (t < 72) return "#0284c7";
+    if (t <= 96) return "#16a34a";
+    if (t <= 108) return "#ea580c";
+    return "#dc2626";
+  }
+
+  function fmtLap(sec) {
+    if (!sec || sec <= 0) return "--:--.---";
+    const m = Math.floor(sec / 60);
+    const s = (sec % 60).toFixed(3).padStart(6, "0");
+    return `${m}:${s}`;
+  }
+
+  let wakeLock = null;
+  async function requestWakeLock() {
+    try {
+      if ("wakeLock" in navigator && !wakeLock) {
+        wakeLock = await navigator.wakeLock.request("screen");
+        wakeLock.addEventListener("release", () => { wakeLock = null; });
+      }
+    } catch (e) {}
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") requestWakeLock();
+  });
+  requestWakeLock();
+
+  async function update() {
+    try {
+      const r = await fetch("/api/telemetry", { cache: "no-store" });
+      const d = await r.json();
+      const sb = document.getElementById("statusBadge");
+      sb.textContent = d.connected ? "LIVE" : "STANDBY";
+      sb.className = d.connected ? "badge live" : "badge";
+      document.getElementById("simBadge").textContent = (d.sim || "BRIDGE").toUpperCase();
+      document.getElementById("posBadge").textContent = `P${d.pos || 1} | LAP ${d.lap || 1}`;
+      document.getElementById("hzLbl").textContent = `${Math.round(d.hz || 0)} Hz`;
+
+      const gearEl = document.getElementById("gearVal");
+      gearEl.textContent = d.gear || "N";
+      gearEl.className = (d.led_pct >= 94) ? "gear-val shift" : "gear-val";
+      document.getElementById("speedVal").textContent = Math.round(d.speed || 0);
+      document.getElementById("rpmVal").textContent = Math.round(d.rpm || 0);
+      document.getElementById("maxRpmLbl").textContent = `/ ${Math.round(d.max_rpm || 8500)} RPM`;
+      const lit = Math.round(((d.led_pct || 0) / 100) * 15);
+      leds.forEach((el, i) => el.classList.toggle("on", i < lit));
+
+      const ersPctEl = document.getElementById("ersPct");
+      const ersFill = document.getElementById("ersFill");
+      const ersStateLbl = document.getElementById("ersStateLbl");
+      const ersModeEl = document.getElementById("ersMode");
+      const modeNames = ["OFF", "MEDIUM", "HOTLAP", "OVERTAKE"];
+      if (d.connected && typeof d.ers === "number" && d.ers >= 0) {
+        const pct = Math.max(0, Math.min(100, d.ers));
+        ersPctEl.textContent = pct.toFixed(1) + "%";
+        ersFill.style.width = pct + "%";
+        ersModeEl.textContent = modeNames.at(d.ers_mode || 0) || "ACTIVE";
+        ersPctEl.classList.remove("deploy", "regen");
+        ersFill.classList.remove("deploy", "regen");
+        if (d.ers_active) {
+          ersPctEl.classList.add("deploy");
+          ersFill.classList.add("deploy");
+          ersStateLbl.textContent = "DEPLOY";
+        } else if (d.ers_charging) {
+          ersPctEl.classList.add("regen");
+          ersFill.classList.add("regen");
+          ersStateLbl.textContent = "REGEN";
+        } else {
+          ersStateLbl.textContent = "READY";
+        }
+      } else {
+        ersPctEl.textContent = "N/D";
+        ersFill.style.width = "0%";
+        ersStateLbl.textContent = "NO HYBRID";
+        ersModeEl.textContent = "MODE --";
+      }
+
+      document.getElementById("tcVal").textContent = d.tc ?? "-";
+      document.getElementById("absVal").textContent = d.abs ?? "-";
+      const bb = d.brake_bias || d.bias || 0;
+      document.getElementById("bbVal").textContent = bb > 1 ? bb.toFixed(1) + "%" : "--.-%";
+      const drsBox = document.getElementById("drsBox");
+      const drsVal = document.getElementById("drsVal");
+      if (d.drs) { drsBox.classList.add("drs-on"); drsVal.textContent = "OPEN"; }
+      else if (d.drs_avail) { drsBox.classList.remove("drs-on"); drsVal.textContent = "AVAIL"; }
+      else { drsBox.classList.remove("drs-on"); drsVal.textContent = "OFF"; }
+
+      const fLitri = d.fuel || 0;
+      const fLaps = d.fuel_laps || 0;
+      const lPerLap = (fLitri > 0.1 && fLaps > 0.1) ? (fLitri / fLaps) : 0;
+      document.getElementById("fuelVal").textContent = lPerLap > 0 ? `${fLitri.toFixed(1)}L (${lPerLap.toFixed(2)})` : `${fLitri.toFixed(1)}L`;
+
+      const fLapsEl = document.getElementById("fuelLaps");
+      fLapsEl.textContent = fLaps.toFixed(1);
+      fLapsEl.classList.remove("fuel-warn", "fuel-crit");
+      if (d.connected && fLitri > 0.1 && fLaps > 0 && fLaps <= 1.5) fLapsEl.classList.add("fuel-crit");
+      else if (d.connected && fLitri > 0.1 && fLaps > 0 && fLaps <= 3.0) fLapsEl.classList.add("fuel-warn");
+
+      document.getElementById("engTemp").textContent = Math.round(d.engine_temp || 0) + "°C";
+      document.getElementById("ambTemp").textContent = `${Math.round(d.track_temp || 0)}° / ${Math.round(d.air_temp || 0)}°`;
+
+      const tp = Array.isArray(d.tyre_press) ? d.tyre_press : [];
+      const tw = Array.isArray(d.tyre_wear) ? d.tyre_wear : [];
+      wheelDefs.forEach(w => {
+        const pVal = tp.at(w.idx) || 0;
+        const wVal = tw.at(w.idx) ?? 100;
+        const wCol = wearColor(wVal);
+        document.getElementById(`psi_${w.key}`).textContent = pVal > 0.5 ? pVal.toFixed(1) + " PSI" : "--.- PSI";
+        const wEl = document.getElementById(`wear_${w.key}`);
+        wEl.textContent = Math.round(wVal) + "%";
+        wEl.style.color = wCol;
+
+        const avgT = Math.round(d[`tyre_${w.key}`] || 0);
+        document.getElementById(`tavg_${w.key}`).textContent = avgT > 0 ? avgT + "°C AVG" : "--°C";
+
+        const imo = d[`tyre_${w.key}_imo`] || [avgT, avgT, avgT];
+        [0, 1, 2].forEach(colIdx => {
+          const srcIdx = w.order[colIdx];
+          const t = Math.round(imo.at(srcIdx) || 0);
+          const cell = document.getElementById(`imo_${w.key}_${colIdx}`);
+          cell.innerHTML = `<span>${w.labels[colIdx]}</span><span>${t > 0 ? t + "°" : "--"}</span>`;
+          cell.style.background = tempColor(t);
+        });
+      });
+
+      document.getElementById("lastLap").textContent = fmtLap(d.last_lap);
+      document.getElementById("bestLap").textContent = fmtLap(d.best_lap);
+      const fl = (d.flag || "none").toLowerCase();
+      document.body.className = fl !== "none" ? `flag-${fl}` : "";
+      document.getElementById("flagLbl").textContent = fl.toUpperCase();
+    } catch (e) {}
+    finally {
+      setTimeout(update, 50);
+    }
+  }
+  update();
+</script>
+</body>
+</html>
