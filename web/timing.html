@@ -92,7 +92,8 @@
   </div>
 
 <script>
-  let bestS1 = 0, bestS2 = 0, bestS3 = 0;
+  let bestS1 = 0, bestS2 = 0, bestS3 = 0, prevSim = "", prevBest = 0;
+  const escHtml = v => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 
   function fmtTime(sec) {
     if (!sec || sec <= 0.01) return "--:--.---";
@@ -112,6 +113,9 @@
     try {
       const r = await fetch("/api/telemetry", { cache: "no-store" });
       const d = await r.json();
+      const curSim = (d.sim || "").toUpperCase(), curBest = d.best_lap || 0;
+      if ((prevSim && curSim && curSim !== prevSim) || (prevBest > 0 && curBest === 0)) { bestS1 = bestS2 = bestS3 = 0; }
+      prevSim = curSim; prevBest = curBest;
 
       const sb = document.getElementById("statusBadge");
       sb.textContent = d.connected ? "LIVE" : "STANDBY";
@@ -154,7 +158,7 @@
           const stTxt = p.in_pit ? `<span class="pit-tag">PIT</span>` : `L${p.lap || 1}`;
           return `<tr class="${p.is_player ? "me" : ""}">
             <td>P${p.pos}</td>
-            <td><div>${p.name}</div><div style="font-size: 12px;color:var(--muted);">${p.car}</div></td>
+            <td><div>${escHtml(p.name)}</div><div style="font-size: 12px;color:var(--muted);">${escHtml(p.car)}</div></td>
             <td>${gapTxt}</td>
             <td class="${isPurple ? "purple" : ""}">${fmtTime(p.best_lap)}</td>
             <td>${fmtTime(p.last_lap)}</td>
@@ -181,9 +185,10 @@
           </tr>`;
         }).join("");
       }
-    } catch (e) {}
+    } catch (e) {} finally { setTimeout(poll, 100); }
   }
-  setInterval(poll, 100);
+  if ("wakeLock" in navigator) navigator.wakeLock.request("screen").catch(()=>{});
+  poll();
 </script>
 </body>
 </html>
