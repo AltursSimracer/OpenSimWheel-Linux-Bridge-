@@ -33,5 +33,5 @@ Routes real-time telemetry (**RPM, shift LEDs, gears, speed, fuel & remaining la
 
 **OpenSimWheel Linux Bridge** è completamente gratuito e open source (GPL-3.0). Se questo progetto ti è utile nei tuoi stint in pista e vuoi offrirmi un caffè per supportare lo sviluppo e i test su nuovi simulatori, qualsiasi contributo è benvenuto!
 
-[![Ko-fi](https://shields.io)](https://ko-fi.com)
-[![PayPal](https://shields.io)](https://paypal.me)
+[![Ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-FF5E5B?style=for-the-badge&logo=ko-fi&logoColor=white)](https://://ko-fi.comalturs)
+[![PayPal](https://img.shields.io/badge/Donate-PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white)](https://www.paypal.me/Alturs329)
