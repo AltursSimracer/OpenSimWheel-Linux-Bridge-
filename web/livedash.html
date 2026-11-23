@@ -309,9 +309,7 @@
       document.body.className = fl !== "none" ? `flag-${fl}` : "";
       document.getElementById("flagLbl").textContent = fl.toUpperCase();
     } catch (e) {}
-    finally {
-      setTimeout(update, 50);
-    }
+    finally { setTimeout(update, 50); }
   }
   update();
 </script>
