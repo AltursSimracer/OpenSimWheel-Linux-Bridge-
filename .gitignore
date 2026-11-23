@@ -2,3 +2,4 @@ __pycache__/
 *.py[cod]
 logs/
 _archive/
+backup_config_*/

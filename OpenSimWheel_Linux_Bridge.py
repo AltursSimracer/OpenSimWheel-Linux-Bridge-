@@ -542,7 +542,7 @@ def carica_configurazione():
         _auto_nic = _osw_rileva_ip_pc()
         if _auto_nic != "127.0.0.1":
             ip_nic = _auto_nic
-    if not _osw_ip_valido(ip_display) or ip_display == "127.0.0.1":
+    if not _osw_ip_valido(ip_display) or ip_display in ("127.0.0.1", "0.0.0.0", "192.168.1.100"):
         _auto_disp = _osw_cerca_display_in_rete(ip_nic)
         if _auto_disp:
             ip_display = _auto_disp
@@ -582,10 +582,10 @@ def carica_configurazione():
             "--title", testi["title"],
             "--text", f"{testi['text']}  [Sim: {gioco_rilevato}]",
             "--separator=|",
-            f"--add-entry={testi['label_nic']} [{ip_nic}]",
-            f"--add-entry={testi['label_ip']} [{ip_display}]",
-            f"--add-entry={testi['label_vport']} [{porta_disp}]",
-            f"--add-entry={testi['label_gport']} [{porta_gioco}]",
+            f"--add-entry={testi['label_nic']}",
+            f"--add-entry={testi['label_ip']}",
+            f"--add-entry={testi['label_vport']}",
+            f"--add-entry={testi['label_gport']}",
             f"--add-combo={testi['label_lang']}",
             f"--combo-values={combo_lingue_str}",
             "--add-combo=Simulatore / Game",
