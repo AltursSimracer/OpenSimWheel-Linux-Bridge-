@@ -116,6 +116,9 @@
       const curSim = (d.sim || "").toUpperCase(), curBest = d.best_lap || 0;
       if ((prevSim && curSim && curSim !== prevSim) || (prevBest > 0 && curBest === 0)) { bestS1 = bestS2 = bestS3 = 0; }
       prevSim = curSim; prevBest = curBest;
+      const curSim = (d.sim || "").toUpperCase(), curBest = d.best_lap || 0;
+      if ((prevSim && curSim && curSim !== prevSim) || (prevBest > 0 && curBest === 0)) { bestS1 = bestS2 = bestS3 = 0; }
+      prevSim = curSim; prevBest = curBest;
 
       const sb = document.getElementById("statusBadge");
       sb.textContent = d.connected ? "LIVE" : "STANDBY";
