@@ -27,6 +27,16 @@ Routes real-time telemetry (**RPM, shift LEDs, gears, speed, fuel & remaining la
 
 ---
 
+## Live Demo Video / Video Dimostrativo
+
+Real-world test recorded on **CachyOS (KDE Plasma)** with **Le Mans Ultimate (LMU)** and a **Thrustmaster SF1000** wheel over local Wi-Fi UDP (recorded on v1.3.0; **v1.4.0** upgrades polling to **100Hz**, adds **rFactor 2**, 3-zone IMO tyre temps, and smart auto-sniffer):
+
+Test reale registrato su **CachyOS (KDE Plasma)** con **Le Mans Ultimate (LMU)** e volante **Thrustmaster SF1000** via UDP Wi-Fi locale (registrato su v1.3.0; la **v1.4.0** porta l'aggiornamento a **100Hz**, aggiunge **rFactor 2**, temperature gomme IMO a 3 zone e rilevamento automatico di rete):
+
+- Watch on YouTube / Guarda su YouTube: https://://youtube.comjkMMlw8S-hk
+
+---
+
 ## Support the Project / Supporta il Progetto
 
 **OpenSimWheel Linux Bridge** is completely free and open source (GPL-3.0). If this project is useful during your stints on track and you'd like to buy me a coffee to support development and testing on new simulators, any contribution is welcome!
