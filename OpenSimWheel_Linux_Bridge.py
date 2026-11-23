@@ -3,7 +3,6 @@ import atexit
 import glob as _glob
 import select
 import shutil
-from concurrent.futures import ThreadPoolExecutor
 import math
 
 def smooth_temp(prev_val, new_val, alpha=0.25):
@@ -27,6 +26,7 @@ try:
     from bridges.rf2_bridge import elabora_pacchetto_rf2
 except ImportError:
     elabora_pacchetto_rf2 = None
+from concurrent.futures import ThreadPoolExecutor
 from bridges.lmu_bridge import elabora_pacchetto_lmu
 from bridges.pmr_bridge import elabora_pacchetto_pmr
 from bridges.ac_ace_bridge import elabora_pacchetto_ac_ace
@@ -191,6 +191,19 @@ class LiveDashHandler(BaseHTTPRequestHandler):
             DASH_STATE["connected"] = (now - DASH_STATE["last_ts"]) < 1.5
             if not DASH_STATE["connected"]:
                 DASH_STATE["hz"] = 0.0
+            # Storico giri personale automatico (funziona su tutti i simulatori)
+            hist = DASH_STATE.setdefault("lap_history", [])
+            ll = float(DASH_STATE.get("last_lap") or 0.0)
+            lp = int(DASH_STATE.get("lap") or 1)
+            if ll > 1.0 and (not hist or abs(hist[0]["time"] - ll) > 0.002 or hist[0]["lap"] != lp - 1):
+                s1v = float(DASH_STATE.get("s1") or 0.0)
+                s2v = float(DASH_STATE.get("s2") or 0.0)
+                s3v = float(DASH_STATE.get("s3") or 0.0)
+                if s3v <= 0.01 and s1v > 0.01 and s2v > 0.01 and ll > (s1v + s2v):
+                    s3v = round(ll - s1v - s2v, 3)
+                hist.insert(0, {"lap": max(1, lp - 1), "time": round(ll, 3), "s1": round(s1v, 3), "s2": round(s2v, 3), "s3": round(s3v, 3)})
+                if len(hist) > 25:
+                    del hist[25:]
             for w in ("fl", "fr", "rl", "rr"):
                 t_val = DASH_STATE.get(f"tyre_{w}", 0)
                 imo_val = DASH_STATE.get(f"tyre_{w}_imo")
@@ -309,9 +322,6 @@ DIZIONARIO = {
         "err_title": "Netzwerkfehler"
     }
 }
-
-# --- DA INCOLLARE DOPO carica_configurazione() (PARTE 3/3) ---
-
 
 def rileva_porta_udp_attiva(ip_nic, porta_richiesta):
     porte_note = (7576, 20777, 5606, 9996, 4444)
@@ -816,7 +826,8 @@ def main():
                     data, _ = udp_sock_game.recvfrom(4096)
                     elabora_pacchetto_lmu(data, out_sock, ip_display, porta_disp, DASH_STATE, logger)
                 except socket.timeout:
-                    pass
+                    elabora_pacchetto_lmu(None, out_sock, ip_display, porta_disp, DASH_STATE, logger)
+                    time.sleep(0.03)
                 continue
             if (os.environ.get("OSW_SIM_MODE") == "RF2" or sim_mode == "RF2") and elabora_pacchetto_rf2 is not None:
                 elabora_pacchetto_rf2(None, out_sock, ip_display, porta_disp, DASH_STATE, logger)

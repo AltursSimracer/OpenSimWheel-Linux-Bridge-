@@ -5,15 +5,16 @@ INSTALL_DIR="$HOME/.local/share/OpenSimWheel"
 CONFIG_DIR="$HOME/.config/OpenSimWheel"
 APPS_DIR="$HOME/.local/share/applications"
 DESKTOP_DIR="$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")"
+SYSCTL_FILE="/etc/sysctl.d/99-opensimwheel-shm.conf"
 HAS_GUI=false
 [ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ] && command -v zenity >/dev/null 2>&1 && HAS_GUI=true
 
 echo "=== Disinstallazione OpenSimWheel Linux Bridge v1.4.0 ==="
 
-# 1. Termina in modo pulito il Core e tutti i satelliti attivi
+# 1. Termina in modo pulito il Core e tutti i satelliti attivi (evitando di uccidere l'uninstaller stesso)
 pkill -15 -f "OpenSimWheel_Linux_Bridge.py" 2>/dev/null || true
 pkill -15 -f "_shm_sender.py" 2>/dev/null || true
-pkill -15 -f "OpenSimWheel" 2>/dev/null || true
+pkill -15 -f "_bridge.py" 2>/dev/null || true
 sleep 0.5
 
 # 2. Rimuove cartella programma e TUTTI i collegamenti (menu + desktop, vecchi e nuovi nomi)
@@ -22,7 +23,17 @@ rm -f "$APPS_DIR/opensimwheel-linux.desktop" "$APPS_DIR/opensimwheel-bridge.desk
 rm -f "$DESKTOP_DIR/OpenSimWheel_Linux.desktop" "$DESKTOP_DIR/OpenSimWheel_Bridge.desktop"
 update-desktop-database "$APPS_DIR" 2>/dev/null || true
 
-# 3. Gestione pulizia configurazione (--purge da terminale OPPURE domanda grafica)
+# 3. Ripristino parametri Kernel Shared Memory (se erano stati applicati in fase di installazione)
+if [ -f "$SYSCTL_FILE" ]; then
+    echo "[INFO] Rimozione configurazione kernel $SYSCTL_FILE..."
+    if [ "$HAS_GUI" = true ] && command -v pkexec >/dev/null 2>&1; then
+        pkexec bash -c "rm -f '$SYSCTL_FILE' && sysctl --system >/dev/null" 2>/dev/null || true
+    else
+        sudo rm -f "$SYSCTL_FILE" && sudo sysctl --system >/dev/null 2>/dev/null || true
+    fi
+fi
+
+# 4. Gestione pulizia configurazione (--purge da terminale OPPURE domanda grafica)
 PURGE=false
 if [ "${1:-}" = "--purge" ]; then
     PURGE=true
@@ -49,5 +60,3 @@ if [ "$HAS_GUI" = true ]; then
     zenity --info --title="OpenSimWheel Linux Bridge v1.4.0" \
         --text="$MSG" --width=420 2>/dev/null || true
 fi
-
-

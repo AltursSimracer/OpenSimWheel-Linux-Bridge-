@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE}")" && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_PKG="$SCRIPT_DIR"
 
 INSTALL_DIR="$HOME/.local/share/OpenSimWheel"
@@ -24,6 +24,8 @@ mkdir -p "$INSTALL_DIR/logs"
 cp -r "$SCRIPT_DIR"/OpenSimWheel_Linux_Bridge.py "$SCRIPT_DIR"/uninstaller.sh "$SCRIPT_DIR"/*.ini "$SCRIPT_DIR"/LICENSE.txt "$SCRIPT_DIR"/bridges "$SCRIPT_DIR"/web "$SCRIPT_DIR"/scripts "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/OpenSimWheel_Linux_Bridge.py"
 [ -f "$INSTALL_DIR/uninstaller.sh" ] && chmod +x "$INSTALL_DIR/uninstaller.sh"
+chmod +x "$INSTALL_DIR"/scripts/*.sh 2>/dev/null || true
+chmod +x "$INSTALL_DIR"/bridges/*.py 2>/dev/null || true
 
 if [ -f "$ROOT_PKG/osw_bridge.ini" ] && [ ! -f "$CONFIG_DIR/osw_bridge.ini" ]; then
     cp "$ROOT_PKG/osw_bridge.ini" "$CONFIG_DIR/osw_bridge.ini"
@@ -55,8 +57,26 @@ fi
 update-desktop-database "$APP_DIR" 2>/dev/null || true
 echo "[OK] OpenSimWheel Linux v1.4.0 installato in $INSTALL_DIR"
 
-# 4. Configurazione Simulatori Proton (Zenity multilingua 5 lingue + Fallback terminale)
+# 4. Configurazione Simulatori Proton & Ottimizzazione Kernel (Zenity 5 lingue + Fallback)
 LANG_CODE="${LANG:0:2}"
+
+apply_kernel_shm() {
+    local USE_GUI="$1"
+    local TMP_CONF
+    TMP_CONF=$(mktemp)
+    cat << 'EOF' > "$TMP_CONF"
+# OpenSimWheel Linux Bridge - Shared Memory & IPC Telemetry Optimization
+kernel.shmmax = 2147483648
+kernel.shmall = 524288
+kernel.yama.ptrace_scope = 0
+EOF
+    if [ "$USE_GUI" = "1" ] && command -v pkexec >/dev/null 2>&1; then
+        pkexec bash -c "install -m 644 '$TMP_CONF' /etc/sysctl.d/99-opensimwheel-shm.conf && sysctl --system >/dev/null" || true
+    else
+        sudo install -m 644 "$TMP_CONF" /etc/sysctl.d/99-opensimwheel-shm.conf && sudo sysctl --system >/dev/null || true
+    fi
+    rm -f "$TMP_CONF"
+}
 
 if command -v zenity >/dev/null 2>&1; then
     case "$LANG_CODE" in
@@ -70,6 +90,9 @@ if command -v zenity >/dev/null 2>&1; then
             NOTE_AC="Configura Shared Memory in Steam Proton (AppID 244210)"
             NOTE_ACE="Configura Shared Memory in Steam Proton (AppID 3058630)"
             NOTE_RRRE="Configura Shared Memory in Steam Proton (AppID 211500)"
+            KERNEL_TITLE="Ottimizzazione Kernel (Opzionale) - OpenSimWheel"
+            KERNEL_TEXT="Vuoi ottimizzare i parametri del kernel Linux (shmmax, shmall, ptrace_scope=0) per garantire l'accesso alla Shared Memory della telemetria tra Proton e i bridge?\n\n(Richiede password di amministratore. Puoi scegliere 'No' se usi già un kernel gaming o preferisci non modificare sysctl.)"
+            KERNEL_OK="[OK] Parametri Kernel Shared Memory applicati (/etc/sysctl.d/99-opensimwheel-shm.conf)"
             ;;
         de)
             TITLE="Simulator-Einrichtung - OpenSimWheel v1.4.0"
@@ -81,6 +104,9 @@ if command -v zenity >/dev/null 2>&1; then
             NOTE_AC="Shared Memory in Steam Proton einrichten (AppID 244210)"
             NOTE_ACE="Shared Memory in Steam Proton einrichten (AppID 3058630)"
             NOTE_RRRE="Shared Memory in Steam Proton einrichten (AppID 211500)"
+            KERNEL_TITLE="Kernel-Optimierung (Optional) - OpenSimWheel"
+            KERNEL_TEXT="Möchtest du die Linux-Kernel-Parameter (shmmax, shmall, ptrace_scope=0) für den Shared-Memory-Zugriff zwischen Proton und den Telemetrie-Bridges optimieren?\n\n(Erfordert Administrator-Passwort. Wähle 'Nein', um sysctl unverändert zu lassen.)"
+            KERNEL_OK="[OK] Kernel Shared-Memory-Parameter angewendet (/etc/sysctl.d/99-opensimwheel-shm.conf)"
             ;;
         fr)
             TITLE="Configuration Simulateurs - OpenSimWheel v1.4.0"
@@ -92,6 +118,9 @@ if command -v zenity >/dev/null 2>&1; then
             NOTE_AC="Configurer mémoire partagée Steam Proton (AppID 244210)"
             NOTE_ACE="Configurer mémoire partagée Steam Proton (AppID 3058630)"
             NOTE_RRRE="Configurer mémoire partagée Steam Proton (AppID 211500)"
+            KERNEL_TITLE="Optimisation du Noyau (Optionnel) - OpenSimWheel"
+            KERNEL_TEXT="Voulez-vous optimiser les paramètres du noyau Linux (shmmax, shmall, ptrace_scope=0) pour l'accès à la mémoire partagée entre Proton et les bridges de télémétrie ?\n\n(Mot de passe administrateur requis. Choisissez 'Non' pour ne pas modifier sysctl.)"
+            KERNEL_OK="[OK] Paramètres noyau appliqués (/etc/sysctl.d/99-opensimwheel-shm.conf)"
             ;;
         es)
             TITLE="Configuración de Simuladores - OpenSimWheel v1.4.0"
@@ -103,6 +132,9 @@ if command -v zenity >/dev/null 2>&1; then
             NOTE_AC="Configurar memoria compartida Steam Proton (AppID 244210)"
             NOTE_ACE="Configurar memoria compartida Steam Proton (AppID 3058630)"
             NOTE_RRRE="Configurar memoria compartida Steam Proton (AppID 211500)"
+            KERNEL_TITLE="Optimización del Kernel (Opcional) - OpenSimWheel"
+            KERNEL_TEXT="¿Deseas optimizar los parámetros del kernel Linux (shmmax, shmall, ptrace_scope=0) para el acceso a la memoria compartida entre Proton y los bridges de telemetría?\n\n(Requiere contraseña de administrador. Elige 'No' si prefieres no modificar sysctl.)"
+            KERNEL_OK="[OK] Parámetros del kernel aplicados (/etc/sysctl.d/99-opensimwheel-shm.conf)"
             ;;
         *)
             TITLE="Simulator Setup - OpenSimWheel v1.4.0"
@@ -114,6 +146,9 @@ if command -v zenity >/dev/null 2>&1; then
             NOTE_AC="Configure Steam Proton Shared Memory (AppID 244210)"
             NOTE_ACE="Configure Steam Proton Shared Memory (AppID 3058630)"
             NOTE_RRRE="Configure Steam Proton Shared Memory (AppID 211500)"
+            KERNEL_TITLE="Kernel Optimization (Optional) - OpenSimWheel"
+            KERNEL_TEXT="Do you want to optimize Linux kernel parameters (shmmax, shmall, ptrace_scope=0) to ensure telemetry Shared Memory access between Proton and the bridges?\n\n(Requires administrator password. Select 'No' if you already use a gaming kernel or prefer not to touch sysctl.)"
+            KERNEL_OK="[OK] Kernel Shared Memory parameters applied (/etc/sysctl.d/99-opensimwheel-shm.conf)"
             ;;
     esac
 
@@ -127,7 +162,7 @@ if command -v zenity >/dev/null 2>&1; then
         TRUE "ACE" "$NOTE_ACE" \
         TRUE "RRRE" "$NOTE_RRRE" 2>/dev/null || true)
 
-    RISULTATI=""
+     RISULTATI=""
     for SIM_ID in ACC AC ACE RRRE; do
         SCRIPT_NAME="setup_${SIM_ID,,}_proton.sh"
         if [[ "|$SCELTE|" == *"|$SIM_ID|"* ]] && [ -f "$ROOT_PKG/scripts/$SCRIPT_NAME" ]; then
@@ -135,6 +170,44 @@ if command -v zenity >/dev/null 2>&1; then
             RISULTATI="${RISULTATI}${OUT_SIM}\n\n"
         fi
     done
+
+    # Scelta ottimizzazione Kernel Shared Memory (Sì / No)
+    case "$LANG_CODE" in
+        it)
+            K_TITLE="Ottimizzazione Kernel (Opzionale)"
+            K_TEXT="Vuoi ottimizzare i parametri del kernel Linux (shmmax, shmall, ptrace_scope=0) per garantire l'accesso alla Shared Memory della telemetria tra Proton e i bridge?\n\n(Richiede password di amministratore. Scegli 'No' se usi già un kernel gaming o non vuoi modificare sysctl.)"
+            K_OK="[OK] Kernel Shared Memory ottimizzato (/etc/sysctl.d/99-opensimwheel-shm.conf)"
+            ;;
+        de)
+            K_TITLE="Kernel-Optimierung (Optional)"
+            K_TEXT="Möchtest du die Linux-Kernel-Parameter (shmmax, shmall, ptrace_scope=0) für den Shared-Memory-Zugriff zwischen Proton und den Telemetrie-Bridges optimieren?\n\n(Erfordert Administrator-Passwort. Wähle 'Nein', um sysctl unverändert zu lassen.)"
+            K_OK="[OK] Kernel Shared Memory optimiert (/etc/sysctl.d/99-opensimwheel-shm.conf)"
+            ;;
+        fr)
+            K_TITLE="Optimisation du Noyau (Optionnel)"
+            K_TEXT="Voulez-vous optimiser les paramètres du noyau Linux (shmmax, shmall, ptrace_scope=0) pour l'accès à la mémoire partagée entre Proton et les bridges ?\n\n(Mot de passe administrateur requis. Choisissez 'Non' pour ne pas modifier sysctl.)"
+            K_OK="[OK] Noyau Shared Memory optimisé (/etc/sysctl.d/99-opensimwheel-shm.conf)"
+            ;;
+        es)
+            K_TITLE="Optimización del Kernel (Opcional)"
+            K_TEXT="¿Deseas optimizar los parámetros del kernel Linux (shmmax, shmall, ptrace_scope=0) para el acceso a la memoria compartida entre Proton y los bridges?\n\n(Requiere contraseña de administrador. Elige 'No' si prefieres no modificar sysctl.)"
+            K_OK="[OK] Kernel Shared Memory optimizado (/etc/sysctl.d/99-opensimwheel-shm.conf)"
+            ;;
+        *)
+            K_TITLE="Kernel Optimization (Optional)"
+            K_TEXT="Do you want to optimize Linux kernel parameters (shmmax, shmall, ptrace_scope=0) to ensure telemetry Shared Memory access between Proton and the bridges?\n\n(Requires administrator password. Select 'No' if you already use a gaming kernel or prefer not to touch sysctl.)"
+            K_OK="[OK] Kernel Shared Memory optimized (/etc/sysctl.d/99-opensimwheel-shm.conf)"
+            ;;
+    esac
+
+    if zenity --question --title="$K_TITLE" --width=540 --text="$K_TEXT" 2>/dev/null; then
+        TMP_SHM=$(mktemp)
+        printf "# OpenSimWheel Linux Bridge - Shared Memory\nkernel.shmmax = 2147483648\nkernel.shmall = 524288\nkernel.yama.ptrace_scope = 0\n" > "$TMP_SHM"
+        if command -v pkexec >/dev/null 2>&1 && pkexec bash -c "install -m 644 '$TMP_SHM' /etc/sysctl.d/99-opensimwheel-shm.conf && sysctl --system >/dev/null"; then
+            RISULTATI="${RISULTATI}${K_OK}\n\n"
+        fi
+        rm -f "$TMP_SHM"
+    fi
 
     if [ -n "$RISULTATI" ]; then
         zenity --info --title="$TITLE" --width=580 --text="$RISULTATI" 2>/dev/null || true
@@ -144,4 +217,14 @@ else
     for SCRIPT_NAME in setup_acc_proton.sh setup_ac_proton.sh setup_ace_proton.sh setup_rrre_proton.sh; do
         [ -f "$ROOT_PKG/scripts/$SCRIPT_NAME" ] && bash "$ROOT_PKG/scripts/$SCRIPT_NAME" || true
     done
+
+    echo ""
+    read -r -p "Ottimizzare parametri kernel per Shared Memory (shmmax, shmall, ptrace_scope=0)? [s/N]: " OPT_KERNEL
+    if [[ "$OPT_KERNEL" =~ ^[sSyY]$ ]]; then
+        TMP_SHM=$(mktemp)
+        printf "# OpenSimWheel Linux Bridge - Shared Memory\nkernel.shmmax = 2147483648\nkernel.shmall = 524288\nkernel.yama.ptrace_scope = 0\n" > "$TMP_SHM"
+        sudo install -m 644 "$TMP_SHM" /etc/sysctl.d/99-opensimwheel-shm.conf && sudo sysctl --system >/dev/null
+        rm -f "$TMP_SHM"
+        echo "[OK] Parametri kernel applicati (/etc/sysctl.d/99-opensimwheel-shm.conf)"
+    fi
 fi

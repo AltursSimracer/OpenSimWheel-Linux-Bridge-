@@ -14,7 +14,48 @@ _LMU_FMT = "<idddddddddBBBbbBdddffBBB20f"
 _LMU_SIZE = struct.calcsize(_LMU_FMT)
 
 
+import threading
+import urllib.request
+import json
+
+_LMU_REST_CACHE = {"started": False, "ve_pct": 0.0, "attack_active": False, "pos": 1, "standings": []}
+
+def _avvia_rest_poller_lmu():
+    if _LMU_REST_CACHE["started"]:
+        return
+    _LMU_REST_CACHE["started"] = True
+    def _poll():
+        while True:
+            try:
+                req = urllib.request.urlopen("http://localhost:6397/rest/watch/standings", timeout=0.4)
+                cars = json.loads(req.read().decode("utf-8"))
+                board = []
+                for c in cars:
+                    is_me = bool(c.get("player") or c.get("focus"))
+                    if is_me:
+                        _LMU_REST_CACHE["ve_pct"] = round(max(0.0, min(100.0, float(c.get("veFraction", 0.0)) * 100.0)), 1)
+                        _LMU_REST_CACHE["attack_active"] = ((c.get("attackMode") or {}).get("timeRemaining", 0) > 0)
+                        _LMU_REST_CACHE["pos"] = int(c.get("position", 1))
+                    board.append({
+                        "pos": int(c.get("position", 99)),
+                        "name": str(c.get("driverName") or c.get("vehicleName") or "Driver"),
+                        "car": str(c.get("vehicleName") or c.get("carClass") or ""),
+                        "lap": int(c.get("lapsCompleted", 0)) + 1,
+                        "last_lap": max(0.0, float(c.get("lastLapTime", 0.0))),
+                        "best_lap": max(0.0, float(c.get("bestLapTime", 0.0))),
+                        "gap": float(c.get("timeBehindLeader", 0.0)),
+                        "in_pit": bool(c.get("inPit") or c.get("pitting")),
+                        "is_player": is_me,
+                    })
+                board.sort(key=lambda x: x["pos"])
+                _LMU_REST_CACHE["standings"] = board
+            except Exception:
+                pass
+            time.sleep(0.1)
+    threading.Thread(target=_poll, daemon=True).start()
+
 def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state, logger):
+    _avvia_rest_poller_lmu()
     if not data or len(data) < _LMU_SIZE:
         return
 
@@ -75,7 +116,9 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
         ers_pct = 0.0
 
     # mElectricBoostMotorState: 0=unavailable, 1=inactive, 2=propulsion (Deploy Verde), 3=regeneration (Harvest Azzurro)
-    ers_active = 1 if (boost_state == 2 or boost_tq > 5.0) else 0
+    if ers_pct <= 0.0 and _LMU_REST_CACHE["ve_pct"] > 0.0:
+        ers_pct = _LMU_REST_CACHE["ve_pct"]
+    ers_active = 1 if (boost_state == 2 or boost_tq > 5.0 or _LMU_REST_CACHE["attack_active"]) else 0
     ers_charging = 1 if (boost_state == 3 or boost_tq < -5.0) else 0
     prev_e = _LMU_STATE["prev_ers"]
     if prev_e >= 0.0 and ers_pct > 0.0 and ers_active == 0 and ers_charging == 0:
@@ -84,7 +127,7 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
         elif ers_pct > prev_e + 0.008:
             ers_charging = 1
     _LMU_STATE["prev_ers"] = ers_pct
-    ers_mode = 3 if ers_active else (1 if ers_pct > 0.0 else 0)
+    ers_mode = 2 if ers_active else (1 if ers_pct > 0.0 else 0)
 
     # Brake Bias anteriore (LMU fornisce mRearBrakeBias 0.0..1.0)
     if 0.15 <= rear_bias <= 0.85:
@@ -113,6 +156,7 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
     dash_state["tc"] = int(tc_val)
     dash_state["abs"] = int(abs_val)
     dash_state["bias"] = front_bias
+    dash_state["brake_bias"] = front_bias
     dash_state["flag"] = flag_str
     dash_state["ers"] = ers_pct
     dash_state["ers_active"] = ers_active
@@ -135,7 +179,8 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
     dash_state["best_lap"] = max(0.0, round(best_lap, 3))
     dash_state["last_lap"] = max(0.0, round(last_lap, 3))
     dash_state["lap"] = max(1, int(current_lap))
-    dash_state["pos"] = max(1, int(place))
+    dash_state["pos"] = max(1, int(_LMU_REST_CACHE.get("pos", 1)))
+    dash_state["standings"] = _LMU_REST_CACHE.get("standings", [])
     dash_state["packets"] += 1
     dash_state["last_ts"] = tempo
     dash_state["hz_counter"] += 1
@@ -157,22 +202,29 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
     struct.pack_into("<HfffB", p6, 0, speed_kmh, 1.0, 0.0, 0.0, 0)
     struct.pack_into("<bHBBH", p6, 15, int(gear_display), rpm, 0, led_pct, led_bits)
     struct.pack_into("<HHHH", p6, 20, 320, 320, 340, 340)
+    p_fl, p_fr, p_rl, p_rr = press_psi
     struct.pack_into("<H", p6, 36, eng_t)
-    struct.pack_into("<BBBB", p6, 44, _u8(s_rl), _u8(s_rr), _u8(s_fl), _u8(s_fr))
-    struct.pack_into("<BBBB", p6, 48, _u8(s_rl), _u8(s_rr), _u8(s_fl), _u8(s_fr))
-    struct.pack_into("<H", p6, 52, eng_t)
+    struct.pack_into("<ffff", p6, 38, p_rl, p_rr, p_fl, p_fr)
+    struct.pack_into("<HHHH", p6, 20, 320, 320, 340, 340)
+    struct.pack_into("<BBBB", p6, 28, _u8(s_rl), _u8(s_rr), _u8(s_fl), _u8(s_fr))
+    struct.pack_into("<BBBB", p6, 32, _u8(s_rl), _u8(s_rr), _u8(s_fl), _u8(s_fr))
+    p_fl, p_fr, p_rl, p_rr = press_psi
+    struct.pack_into("<H", p6, 36, eng_t)
+    struct.pack_into("<ffff", p6, 38, p_rl, p_rr, p_fl, p_fr)
     out_sock.sendto(h6 + p6, (ip_display, porta_display))
 
     if tempo - _LMU_STATE["last_slow_ts"] >= 0.1:
         _LMU_STATE["last_slow_ts"] = tempo
         h0 = struct.pack(hdr, 2020, 1, 0, 1, 0, 123456789, float(tempo), fid, 0, 0)
         p0 = bytearray(1440)
+        # --- Packet ID 1: SessionData (F1 2020) ---
         h1 = struct.pack(hdr, 2020, 1, 0, 1, 1, 123456789, float(tempo), fid, 0, 0)
         p1 = bytearray(227)
         struct.pack_into("<BbbBH", p1, 0, 1, 28, 22, 60, 5793)
-        struct.pack_into("<B", p1, 6, 10)
-        struct.pack_into("<B", p1, 19, 1)
+        struct.pack_into("<B", p1, 6, 10)   # m_sessionType: 10 = Race
+        struct.pack_into("<B", p1, 19, 0)   # m_formula: 0 = F1 Modern (ABILITA ERS su SF1000!)
 
+        # --- Packet ID 7: CarStatusData (F1 2020) ---
         h7 = struct.pack(hdr, 2020, 1, 0, 1, 7, 123456789, float(tempo), fid, 0, 0)
         p7 = bytearray(1320)
         tc_f1 = 0 if tc_val <= 0 else (1 if tc_val <= 4 else 2)
@@ -181,11 +233,19 @@ def elabora_pacchetto_lmu(data, out_sock, ip_display, porta_display, dash_state,
         struct.pack_into("<BBBBB", p7, 0, tc_f1, abs_f1, 1, bb_f1, 0)
         struct.pack_into("<fff", p7, 5, fuel_val if fuel_val > 0.1 else 45.0, fuel_cap_val, fuel_laps if fuel_laps > 0.1 else 15.0)
         struct.pack_into("<HHB", p7, 17, shift_rpm, idle_rpm, 8)
+        # Gomme visive (offset 25=actual, 26=visual -> 16=C3 Soft) per evitare campi vuoti
+        struct.pack_into("<BB", p7, 25, 16, 16)
         fia_flag = 2 if (in_fuorigiri and int(tempo * 20) % 2 == 0) else (3 if flag_str == "yellow" else 0)
-        struct.pack_into("<b", p7, 42, fia_flag)
         ers_joules = max(0.0, min(4000000.0, (ers_pct / 100.0) * 4000000.0))
-        struct.pack_into("<fB", p7, 43, ers_joules, ers_mode)
+        struct.pack_into("<bfB", p7, 38, fia_flag, ers_joules, ers_mode)
 
+
+
+        h2 = struct.pack(hdr, 2020, 1, 0, 1, 2, 123456789, float(tempo), fid, 0, 0)
+        p2 = bytearray(1168)
+        struct.pack_into("<BBBB", p2, 34, max(1, int(place)), max(1, int(current_lap)), 0, 1)
+        struct.pack_into("<BBBBB", p2, 41, 0, 0, 2, 4, 2)
         out_sock.sendto(h0 + p0, (ip_display, porta_display))
+        out_sock.sendto(h2 + p2, (ip_display, porta_display))
         out_sock.sendto(h1 + p1, (ip_display, porta_display))
         out_sock.sendto(h7 + p7, (ip_display, porta_display))

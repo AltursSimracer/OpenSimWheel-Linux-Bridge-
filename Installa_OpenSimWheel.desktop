@@ -1,0 +1,19 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install OpenSimWheel Bridge v1.4.0
+Name[it_IT]=Installa OpenSimWheel Bridge v1.4.0
+Name[de]=OpenSimWheel Bridge v1.4.0 installieren
+Name[fr]=Installer OpenSimWheel Bridge v1.4.0
+Name[es]=Instalar OpenSimWheel Bridge v1.4.0
+Comment=Start OpenSimWheel Linux Bridge guided installation
+Comment[it_IT]=Avvia l'installazione guidata di OpenSimWheel Linux Bridge
+Comment[de]=Geführte Installation der OpenSimWheel Linux Bridge starten
+Comment[fr]=Démarrer l'installation guidée d'OpenSimWheel Linux Bridge
+Comment[es]=Iniciar la instalación guiada de OpenSimWheel Linux Bridge
+Categories=Game;Utility;
+Icon=system-software-install
+TryExec=/usr/bin/env
+Exec=bash -c 'DIR="$(dirname "$1")"; chmod +x "$DIR"/*.sh "$DIR"/scripts/*.sh 2>/dev/null; cd "$DIR" && exec bash ./installer.sh' _ %k
+Terminal=false
+StartupNotify=true

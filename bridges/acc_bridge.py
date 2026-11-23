@@ -319,6 +319,10 @@ def elabora_pacchetto_acc(data, out_sock, ip_display, porta_display, dash_state,
             dash_state["tc"] = SHM_DATA["tc"]
             dash_state["abs"] = SHM_DATA["abs"]
             dash_state["brake_bias"] = SHM_DATA["bb"]
+            dash_state["ers"] = -1
+            dash_state["ers_active"] = 0
+            dash_state["ers_charging"] = 0
+            dash_state["ers_mode"] = 0
             dash_state["flag"] = SHM_DATA["flag"]
             dash_state["air_temp"] = ACC_STATE["air_temp"]
             dash_state["track_temp"] = ACC_STATE["track_temp"]

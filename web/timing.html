@@ -5,274 +5,185 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>OpenSimWheel - PitWall Timing</title>
 <style>
-  :root {
-    --bg: #0a0b0e;
-    --panel: #14171f;
-    --border: #262b38;
-    --text: #f0f3f8;
-    --muted: #7c8599;
-    --accent: #e10600;
-    --green: #00e676;
-    --purple: #d500f9;
-    --yellow: #ffd600;
-    --cyan: #00e5ff;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-  body {
-    background-color: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    height: 100vh;
-    height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 10px;
-    overflow: hidden;
-  }
-  .topbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-left: 5px solid var(--accent);
-    padding: 6px 14px;
-    border-radius: 6px;
-  }
-  .title { font-weight: 800; letter-spacing: 1.5px; font-size: 0.95rem; text-transform: uppercase; }
-  .nav-btn {
-    background: #232836;
-    color: #fff;
-    border: 1px solid #384054;
-    padding: 6px 12px;
-    border-radius: 4px;
-    text-decoration: none;
-    font-size: 0.8rem;
-    font-weight: 700;
-    touch-action: manipulation;
-  }
-  .main-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 8px;
-  }
-  .box {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-  .label {
-    font-size: 0.78rem;
-    color: var(--muted);
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-  .big-num {
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 3.6rem;
-    font-weight: 900;
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-  }
-  .pos-color { color: var(--yellow); }
-  .lap-color { color: var(--text); }
-  .current-box {
-    background: var(--panel);
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    padding: 12px;
-    text-align: center;
-    margin-top: 8px;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .time-hero {
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 4.8rem;
-    font-weight: 900;
-    letter-spacing: 2px;
-    color: #ffffff;
-    font-variant-numeric: tabular-nums;
-  }
-  .sectors-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    margin-top: 8px;
-  }
-  .sector-box {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-top: 3px solid var(--cyan);
-    border-radius: 6px;
-    padding: 8px 10px;
-    text-align: center;
-  }
-  .sector-time {
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 1.85rem;
-    font-weight: 800;
-    color: var(--cyan);
-    font-variant-numeric: tabular-nums;
-  }
-  .sub-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-top: 8px;
-  }
-  .time-sub {
-    font-family: 'Consolas', 'Courier New', monospace;
-    font-size: 2.3rem;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-  .last-color { color: var(--green); }
-  .best-color { color: var(--purple); }
-  .footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.78rem;
-    color: var(--muted);
-    margin-top: 6px;
-    padding: 0 4px;
-  }
-  .dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: #ff1744;
-    margin-right: 6px;
-  }
-  .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); }
-  @media (max-width: 600px) {
-    .big-num { font-size: 2.8rem; }
-    .time-hero { font-size: 3.1rem; }
-    .sector-time { font-size: 1.4rem; }
-    .time-sub { font-size: 1.65rem; }
-  }
+  :root { --bg: #080a0f; --card: #111622; --border: #1e2738; --text: #f1f5f9; --muted: #64748b; --accent: #38bdf8; --green: #22c55e; --purple: #c084fc; --amber: #f59e0b; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; padding: 10px; gap: 10px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 14px; gap: 8px; flex-wrap: wrap; }
+  .nav-btn { text-decoration: none; font-size: 14px; font-weight: 800; padding: 5px 12px; border-radius: 6px; background: #1d4ed8; color: #fff; }
+  .badge { font-size: 14px; font-weight: 700; padding: 4px 10px; border-radius: 6px; background: #1e293b; color: #94a3b8; }
+  .badge.live { background: rgba(34,197,94,0.18); color: var(--green); border: 1px solid rgba(34,197,94,0.4); }
+
+  .top-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  @media (max-width: 820px) { .top-cards { grid-template-columns: repeat(2, 1fr); } }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px; }
+  .lbl { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+  .t-val { font-size: 25px; font-weight: 900; font-variant-numeric: tabular-nums; margin-top: 3px; }
+
+  .sectors-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .sec-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; }
+  .sec-cur { font-size: 21px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .sec-best { font-size: 13px; font-weight: 700; color: var(--purple); }
+
+  .tables-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 10px; flex: 1; min-height: 260px; }
+  @media (max-width: 900px) { .tables-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; overflow: hidden; }
+  .panel-hdr { font-size: 13px; font-weight: 800; color: var(--muted); letter-spacing: 0.8px; margin-bottom: 8px; display: flex; justify-content: space-between; }
+  .tbl-wrap { overflow-y: auto; flex: 1; max-height: 52vh; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { text-align: left; font-size: 12px; color: var(--muted); padding: 6px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--card); }
+  td { padding: 6px; border-bottom: 1px solid rgba(30,39,56,0.5); font-weight: 600; }
+  tr.me { background: rgba(56,189,248,0.14); }
+  tr.me td { color: #fff; font-weight: 800; }
+  .purple { color: var(--purple) !important; font-weight: 800; }
+  .green { color: var(--green) !important; font-weight: 800; }
+  .pit-tag { font-size: 12px; padding: 2px 5px; border-radius: 4px; background: rgba(245,158,11,0.2); color: var(--amber); font-weight: 800; }
 </style>
 </head>
 <body>
-
   <div class="topbar">
-    <div class="title">PITWALL TELEMETRY // TIMING</div>
-    <a href="/" class="nav-btn">RPM / GEAR DASH &rarr;</a>
-  </div>
-
-  <div class="main-grid">
-    <div class="box">
-      <div class="label">POSITION</div>
-      <div class="big-num pos-color" id="pos">P1</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <a href="/" class="nav-btn">&larr; LIVE DASH</a>
+      <span class="badge" id="statusBadge">OFFLINE</span>
+      <span class="badge" id="simBadge">PITWALL TIMING</span>
     </div>
-    <div class="box">
-      <div class="label">LAP</div>
-      <div class="big-num lap-color" id="lap">1</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span class="badge" id="posBadge">P-- | LAP --</span>
+      <span class="badge purple" id="absBestBadge">SESSION BEST: --:--.---</span>
     </div>
   </div>
 
-  <div class="current-box">
-    <div class="label">CURRENT LAP TIME</div>
-    <div class="time-hero" id="curr">0:00.000</div>
+  <div class="top-cards">
+    <div class="stat-card"><div class="lbl">GIRO ATTUALE</div><div class="t-val" id="curLap">0:00.000</div></div>
+    <div class="stat-card"><div class="lbl">ULTIMO GIRO</div><div class="t-val" id="lastLap">--:--.---</div></div>
+    <div class="stat-card"><div class="lbl">MIO MIGLIOR GIRO</div><div class="t-val purple" id="bestLap">--:--.---</div></div>
+    <div class="stat-card"><div class="lbl">GIRO IDEALE (S1+S2+S3)</div><div class="t-val green" id="idealLap">--:--.---</div></div>
   </div>
 
-  <div class="sectors-grid">
-    <div class="sector-box">
-      <div class="label">SECTOR 1</div>
-      <div class="sector-time" id="s1">--.---</div>
+  <div class="sectors-row">
+    <div class="sec-card"><div><div class="lbl">SETTORE 1</div><div class="sec-cur" id="s1">--.---</div></div><div class="sec-best" id="bs1">BEST --.---</div></div>
+    <div class="sec-card"><div><div class="lbl">SETTORE 2</div><div class="sec-cur" id="s2">--.---</div></div><div class="sec-best" id="bs2">BEST --.---</div></div>
+    <div class="sec-card"><div><div class="lbl">SETTORE 3</div><div class="sec-cur" id="s3">--.---</div></div><div class="sec-best" id="bs3">BEST --.---</div></div>
+  </div>
+  <style>
+    .sec-best { font-size: 18px !important; font-weight: 900 !important; color: #e879f9 !important; background: rgba(192,132,252,0.12); padding: 4px 8px; border-radius: 6px; }
+    #bestLap { font-size: 29px !important; }
+  </style>
+
+  <div class="tables-grid">
+    <div class="panel">
+      <div class="panel-hdr"><span>CLASSIFICA PARTECIPANTI LIVE</span><span id="gridCount">0 PILOTI</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>POS</th><th>PILOTA / AUTO</th><th>GAP</th><th>BEST LAP</th><th>LAST LAP</th><th>STATO</th></tr></thead>
+          <tbody id="standingsBody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px;">In attesa dei partecipanti in pista...</td></tr></tbody>
+        </table>
+      </div>
     </div>
-    <div class="sector-box">
-      <div class="label">SECTOR 2</div>
-      <div class="sector-time" id="s2">--.---</div>
-    </div>
-    <div class="sector-box">
-      <div class="label">SECTOR 3</div>
-      <div class="sector-time" id="s3">--.---</div>
+
+    <div class="panel">
+      <div class="panel-hdr"><span>I MIEI GIRI &amp; INTERMEDI</span><span id="myLapCount">0 GIRI</span></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>LAP</th><th>TEMPO</th><th>S1</th><th>S2</th><th>S3</th><th>DELTA</th></tr></thead>
+          <tbody id="myLapsBody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:16px;">Nessun giro completato</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
-  <div class="sub-grid">
-    <div class="box">
-      <div class="label">LAST LAP</div>
-      <div class="time-sub last-color" id="last">--:--.---</div>
-    </div>
-    <div class="box">
-      <div class="label">BEST LAP</div>
-      <div class="time-sub best-color" id="best">--:--.---</div>
-    </div>
-  </div>
-
-  <div class="footer">
-    <div><span class="dot" id="dot"></span><span id="status">WAITING UDP...</span></div>
-    <div>OpenSimWheel Linux Bridge</div>
-  </div>
 <script>
-function formatTime(sec) {
-  if (!sec || sec <= 0.01) return "--:--.---";
-  const totalMs = Math.round(sec * 1000);
-  const mins = Math.floor(totalMs / 60000);
-  const secs = Math.floor((totalMs % 60000) / 1000);
-  const ms = totalMs % 1000;
-  return mins + ":" + String(secs).padStart(2, '0') + "." + String(ms).padStart(3, '0');
-}
+  let bestS1 = 0, bestS2 = 0, bestS3 = 0;
 
-function formatSector(sec) {
-  if (!sec || sec <= 0.01) return "--.---";
-  return sec.toFixed(3);
-}
-
-async function poll() {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 250);
-
-  try {
-    const res = await fetch('/api/telemetry', { signal: controller.signal, cache: 'no-store' });
-    clearTimeout(timeoutId);
-    const d = await res.json();
-
-    document.getElementById('pos').textContent = "P" + (d.pos || 1);
-    document.getElementById('lap').textContent = d.lap || 1;
-    document.getElementById('curr').textContent = (d.cur_lap && d.cur_lap > 0.01) ? formatTime(d.cur_lap) : "0:00.000";
-    document.getElementById('last').textContent = formatTime(d.last_lap);
-    document.getElementById('best').textContent = formatTime(d.best_lap);
-
-    document.getElementById('s1').textContent = formatSector(d.s1);
-    document.getElementById('s2').textContent = formatSector(d.s2);
-    const s3 = (d.s3 && d.s3 > 0.01) ? d.s3 :
-               ((d.last_lap > 0 && d.s1 > 0 && d.s2 > 0 && d.last_lap > (d.s1 + d.s2))
-               ? (d.last_lap - d.s1 - d.s2)
-               : 0);
-    document.getElementById('s3').textContent = formatSector(s3);
-
-    const dot = document.getElementById('dot');
-    const st = document.getElementById('status');
-    if (d.connected) {
-      dot.classList.add('live');
-      st.textContent = "LIVE TELEMETRY";
-    } else {
-      dot.classList.remove('live');
-      st.textContent = "PAUSED / WAITING UDP";
-    }
-  } catch (e) {
-    clearTimeout(timeoutId);
-  } finally {
-    setTimeout(poll, 50);
+  function fmtTime(sec) {
+    if (!sec || sec <= 0.01) return "--:--.---";
+    const totalMs = Math.round(sec * 1000);
+    const m = Math.floor(totalMs / 60000);
+    const s = Math.floor((totalMs % 60000) / 1000);
+    const ms = totalMs % 1000;
+    return `${m}:${String(s).padStart(2, "0")}.${String(ms).padStart(3, "0")}`;
   }
-}
-poll();
+
+  function fmtSec(sec) {
+    if (!sec || sec <= 0.01) return "--.---";
+    return sec.toFixed(3);
+  }
+
+  async function poll() {
+    try {
+      const r = await fetch("/api/telemetry", { cache: "no-store" });
+      const d = await r.json();
+
+      const sb = document.getElementById("statusBadge");
+      sb.textContent = d.connected ? "LIVE" : "STANDBY";
+      sb.className = d.connected ? "badge live" : "badge";
+      document.getElementById("simBadge").textContent = (d.sim || "PITWALL").toUpperCase();
+      document.getElementById("posBadge").textContent = `P${d.pos || 1} | LAP ${d.lap || 1}`;
+
+      document.getElementById("curLap").textContent = d.cur_lap > 0.01 ? fmtTime(d.cur_lap) : "0:00.000";
+      document.getElementById("lastLap").textContent = fmtTime(d.last_lap);
+      document.getElementById("bestLap").textContent = fmtTime(d.best_lap);
+
+      const s1 = d.s1 || 0, s2 = d.s2 || 0;
+      const s3 = (d.s3 && d.s3 > 0.01) ? d.s3 : ((d.last_lap > 0 && s1 > 0 && s2 > 0 && d.last_lap > (s1 + s2)) ? (d.last_lap - s1 - s2) : 0);
+      if (s1 > 0.01 && (bestS1 === 0 || s1 < bestS1)) bestS1 = s1;
+      if (s2 > 0.01 && (bestS2 === 0 || s2 < bestS2)) bestS2 = s2;
+      if (s3 > 0.01 && (bestS3 === 0 || s3 < bestS3)) bestS3 = s3;
+
+      document.getElementById("s1").textContent = fmtSec(s1);
+      document.getElementById("s2").textContent = fmtSec(s2);
+      document.getElementById("s3").textContent = fmtSec(s3);
+      document.getElementById("bs1").textContent = "BEST " + fmtSec(bestS1);
+      document.getElementById("bs2").textContent = "BEST " + fmtSec(bestS2);
+      document.getElementById("bs3").textContent = "BEST " + fmtSec(bestS3);
+
+      const ideal = (bestS1 > 0 && bestS2 > 0 && bestS3 > 0) ? (bestS1 + bestS2 + bestS3) : 0;
+      document.getElementById("idealLap").textContent = fmtTime(ideal);
+
+      // Classifica Partecipanti
+      const grid = Array.isArray(d.standings) ? d.standings : [];
+      document.getElementById("gridCount").textContent = `${grid.length} PILOTI`;
+      let absBest = d.best_lap || 0;
+      grid.forEach(p => { if (p.best_lap > 0.01 && (absBest === 0 || p.best_lap < absBest)) absBest = p.best_lap; });
+      document.getElementById("absBestBadge").textContent = "SESSION BEST: " + fmtTime(absBest);
+
+      const sbBody = document.getElementById("standingsBody");
+      if (grid.length > 0) {
+        sbBody.innerHTML = grid.map(p => {
+          const isPurple = (absBest > 0 && Math.abs(p.best_lap - absBest) < 0.002);
+          const gapTxt = p.pos === 1 ? "LEADER" : (p.gap > 0 ? `+${p.gap.toFixed(3)}s` : "--");
+          const stTxt = p.in_pit ? `<span class="pit-tag">PIT</span>` : `L${p.lap || 1}`;
+          return `<tr class="${p.is_player ? "me" : ""}">
+            <td>P${p.pos}</td>
+            <td><div>${p.name}</div><div style="font-size: 12px;color:var(--muted);">${p.car}</div></td>
+            <td>${gapTxt}</td>
+            <td class="${isPurple ? "purple" : ""}">${fmtTime(p.best_lap)}</td>
+            <td>${fmtTime(p.last_lap)}</td>
+            <td>${stTxt}</td>
+          </tr>`;
+        }).join("");
+      }
+
+      // Storico Miei Giri
+      const hist = Array.isArray(d.lap_history) ? d.lap_history : [];
+      document.getElementById("myLapCount").textContent = `${hist.length} GIRI`;
+      const myBody = document.getElementById("myLapsBody");
+      if (hist.length > 0) {
+        myBody.innerHTML = hist.map(h => {
+          const isBest = (d.best_lap > 0 && Math.abs(h.time - d.best_lap) < 0.002);
+          const delta = (d.best_lap > 0 && h.time > d.best_lap) ? `+${(h.time - d.best_lap).toFixed(3)}` : (isBest ? "BEST" : "--");
+          return `<tr>
+            <td>${h.lap}</td>
+            <td class="${isBest ? "purple" : ""}">${fmtTime(h.time)}</td>
+            <td>${fmtSec(h.s1)}</td>
+            <td>${fmtSec(h.s2)}</td>
+            <td>${fmtSec(h.s3)}</td>
+            <td class="${isBest ? "purple" : ""}">${delta}</td>
+          </tr>`;
+        }).join("");
+      }
+    } catch (e) {}
+  }
+  setInterval(poll, 100);
 </script>
 </body>
 </html>

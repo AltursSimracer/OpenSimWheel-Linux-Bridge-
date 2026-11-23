@@ -240,8 +240,8 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
         h1 = struct.pack(hdr, 2020, 1, 0, 1, 1, 123456789, float(tempo), _fid, 0, 0)
         p1 = bytearray(227)
         struct.pack_into("<BbbBH", p1, 0, 1, track_temp_c, air_temp_c, 60, track_len_m)
-        struct.pack_into("<B", p1, 6, 0)
-        struct.pack_into("<B", p1, 19, 1)
+        struct.pack_into("<B", p1, 6, 10)
+        struct.pack_into("<B", p1, 19, 0)
 
         h2 = struct.pack(hdr, 2020, 1, 0, 1, 2, 123456789, float(tempo), _fid, 0, 0)
         p2 = bytearray(1168)
@@ -283,14 +283,14 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
         struct.pack_into("<BBBB", p7, 33, _d_rl, _d_rr, _d_fl, _d_fr)
         struct.pack_into("<BBB", p7, 29, 16, 16, max(1, int(locals().get("lap_num", 1))))
         _fia_map = {"green": 1, "blue": 2, "yellow": 3, "white": 4}
+        _fia_map = {"green": 1, "blue": 2, "yellow": 3, "white": 4}
         if in_fuorigiri:
             fia_flag = 2 if int(tempo * 20) % 2 == 0 else 4
         else:
             fia_flag = _fia_map.get(flag_str, 0)
-        struct.pack_into("<b", p7, 42, fia_flag)
 
-        # --- INIZIO PATCH ERS UNIVERSALE + SF1000 (PACKET 7) ---
-        _ers_pct = float(locals().get("ers_pct", locals().get("ers_charge", 0.0)))
+        # --- INIZIO PATCH ERS UNIVERSALE + SF1000 (PACKET 7 - OFFSET ESATTO 38/39) ---
+        _ers_pct = float(locals().get("ers_pct", locals().get("ers_charge", dash_state.get("ers", 0.0))))
         _ers_act = int(locals().get("ers_active", 0))
         _ers_chg = int(locals().get("ers_charging", 0))
         _ers_mod = 2 if _ers_act else (1 if _ers_pct > 0 else 0)
@@ -303,7 +303,7 @@ def elabora_pacchetto_ac_ace(data, out_sock, ip_display, porta_display, dash_sta
             _ers_chg = 1
         globals()["_OSW_PREV_ERS"] = _ers_pct
         _ers_joules = max(0.0, min(4000000.0, (_ers_pct / 100.0) * 4000000.0))
-        struct.pack_into("<fB", p7, 43, _ers_joules, _ers_mod)
+        struct.pack_into("<bfB", p7, 38, fia_flag, _ers_joules, _ers_mod)
         if "DASH_STATE" in locals() or "DASH_STATE" in globals():
             DASH_STATE["ers"] = round(_ers_pct, 1)
             DASH_STATE["ers_active"] = _ers_act
