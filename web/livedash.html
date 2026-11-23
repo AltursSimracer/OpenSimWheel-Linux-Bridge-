@@ -142,10 +142,10 @@
 
   // Orientamento speculare reale: ruote sinistre [O, M, I], ruote destre [I, M, O]
   const wheelDefs = [
-    { key: "fl", label: "ANT SX (FL)", idx: 0, order:, labels: ["O", "M", "I"] },
-    { key: "fr", label: "ANT DX (FR)", idx: 1, order:, labels: ["I", "M", "O"] },
-    { key: "rl", label: "POST SX (RL)", idx: 2, order:, labels: ["O", "M", "I"] },
-    { key: "rr", label: "POST DX (RR)", idx: 3, order:, labels: ["I", "M", "O"] }
+    { key: "fl", label: "ANT SX (FL)", idx: 0, order: [2, 1, 0], labels: ["O", "M", "I"] },
+    { key: "fr", label: "ANT DX (FR)", idx: 1, order: [0, 1, 2], labels: ["I", "M", "O"] },
+    { key: "rl", label: "POST SX (RL)", idx: 2, order: [2, 1, 0], labels: ["O", "M", "I"] },
+    { key: "rr", label: "POST DX (RR)", idx: 3, order: [0, 1, 2], labels: ["I", "M", "O"] }
   ];
 
   const tyresGrid = document.getElementById("tyresGrid");
